@@ -1,0 +1,61 @@
+import { BlogPost, ContactSubmission, DemoRequest, RoiCalculation, CookieConsent } from "./types/database";
+import { Post } from "./types";
+
+/**
+ * PRODUCTION CONFIGURATION
+ * Now reading from import.meta.env (Vite Environment Variables).
+ * 
+ * Create a .env file in the root directory with:
+ * VITE_DATABASE_URL=postgresql://...
+ * VITE_N8N_WEBHOOK_URL=https://...
+ * VITE_N8N_WEBHOOK_SECRET=...
+ * VITE_ADMIN_USER=admin
+ * VITE_ADMIN_PASSWORD=...
+ */
+
+const getEnv = (key: string, required = false): string => {
+  // @ts-ignore - Vite specific
+  const val = import.meta.env[key];
+  if (required && !val) {
+    console.warn(`Missing Environment Variable: ${key}. App may not function correctly in production.`);
+    return '';
+  }
+  return val || '';
+};
+
+export const CONFIG = {
+  // @ts-ignore
+  DATABASE_URL: getEnv('VITE_DATABASE_URL', true),
+  // @ts-ignore
+  N8N_WEBHOOK_URL: getEnv('VITE_N8N_WEBHOOK_URL', true),
+  // @ts-ignore
+  N8N_WEBHOOK_SECRET: getEnv('VITE_N8N_WEBHOOK_SECRET', true),
+  // @ts-ignore
+  ADMIN_USER: getEnv('VITE_ADMIN_USER') || 'admin',
+  // @ts-ignore
+  ADMIN_PASSWORD: getEnv('VITE_ADMIN_PASSWORD') || 'hotelmol_secure_2024',
+};
+
+// Fallback Mock Data is kept ONLY for components that fail to fetch real data
+// or during the transition period if tables don't exist yet.
+
+// Helper to generate a date relative to today (daysAgo)
+const getDate = (daysAgo: number, hoursAgo: number = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  d.setHours(d.getHours() - hoursAgo);
+  return d.toISOString();
+};
+
+export const MOCK_DEMO_REQUESTS: DemoRequest[] = [
+  { id: 1, name: 'Example User', email: 'user@example.com', hotel_name: 'Demo Hotel', data_processing_consent: true, marketing_consent: true, created_at: getDate(0, 1), updated_at: getDate(0, 1) },
+];
+
+export const MOCK_CONTACTS: ContactSubmission[] = [
+  { id: 1, name: 'Contact Lead', email: 'contact@example.com', phone: '123456', position: 'Manager', hotel_name: 'Test Hotel', message: 'Hello', data_processing_consent: true, marketing_consent: true, created_at: getDate(0, 5), updated_at: getDate(0, 5) },
+];
+
+export const MOCK_ROI_CALCULATIONS: RoiCalculation[] = [];
+export const MOCK_COOKIE_CONSENTS: CookieConsent[] = [];
+export const MOCK_INITIAL_POSTS: Post[] = [];
+export const MOCK_BLOG_POSTS_FULL: BlogPost[] = [];
