@@ -49,20 +49,30 @@ export interface CookieConsent {
 
 export interface BlogPost {
   id: number;
+  // Контент (украинский - основной)
   title: string;
   slug: string;
   content: string;
+  // Переводы контента
   title_ru?: string;
   content_ru?: string;
   title_en?: string;
   content_en?: string;
   title_pl?: string;
   content_pl?: string;
+  // SEO метаданные
+  seo_title?: string; // UA (основной)
+  seo_description?: string; // UA (основной)
+  seo_title_ru?: string;
+  seo_description_ru?: string;
+  seo_title_en?: string;
+  seo_description_en?: string;
+  seo_title_pl?: string;
+  seo_description_pl?: string;
+  // Остальные поля (не менять)
   author_id: number;
   status: 'published' | 'draft' | 'archived';
   published_at?: string;
-  seo_title?: string;
-  seo_description?: string;
   featured_image?: string;
   category: string;
   tags: string[]; // JSONB

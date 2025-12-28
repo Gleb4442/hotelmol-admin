@@ -103,6 +103,12 @@ export const updateBlogPost = async (id: number, data: Partial<BlogPost>): Promi
           tags = ${JSON.stringify(data.tags || [])},
           seo_title = ${data.seo_title || null},
           seo_description = ${data.seo_description || null},
+          seo_title_ru = ${data.seo_title_ru || null},
+          seo_description_ru = ${data.seo_description_ru || null},
+          seo_title_en = ${data.seo_title_en || null},
+          seo_description_en = ${data.seo_description_en || null},
+          seo_title_pl = ${data.seo_title_pl || null},
+          seo_description_pl = ${data.seo_description_pl || null},
           updated_at = NOW()
         WHERE id = ${id}
         RETURNING *

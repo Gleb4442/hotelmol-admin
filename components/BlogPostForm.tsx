@@ -15,25 +15,36 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // State for active tab
+  const [activeTab, setActiveTab] = useState<'ua' | 'ru' | 'en' | 'pl'>('ua');
+
   const [formData, setFormData] = useState<PublishPostPayload>({
     title: '',
     slug: '',
     content: '',
+    // Переводы контента
     title_ru: '',
     content_ru: '',
     title_en: '',
     content_en: '',
     title_pl: '',
     content_pl: '',
+    // SEO метаданные
+    seo_title: '',
+    seo_description: '',
+    seo_title_ru: '',
+    seo_description_ru: '',
+    seo_title_en: '',
+    seo_description_en: '',
+    seo_title_pl: '',
+    seo_description_pl: '',
+    // Остальные поля
     status: 'draft',
     category: 'General',
     tags: [],
     author_id: 1, // Default Admin ID
-    seo_title: '',
-    seo_description: ''
+    featured_image: ''
   });
-
-  const [activeTab, setActiveTab] = useState<'ua' | 'ru' | 'en' | 'pl'>('ua');
 
   const [rawTags, setRawTags] = useState('');
 
@@ -41,21 +52,31 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
   useEffect(() => {
     if (initialData) {
       setFormData({
-        title: initialData.title,
-        slug: initialData.slug,
-        content: initialData.content,
+        title: initialData.title || '',
+        slug: initialData.slug || '',
+        content: initialData.content || '',
+        // Переводы контента
         title_ru: initialData.title_ru || '',
         content_ru: initialData.content_ru || '',
         title_en: initialData.title_en || '',
         content_en: initialData.content_en || '',
         title_pl: initialData.title_pl || '',
         content_pl: initialData.content_pl || '',
-        status: initialData.status,
-        category: initialData.category,
-        tags: initialData.tags,
-        author_id: initialData.author_id,
+        // SEO метаданные
         seo_title: initialData.seo_title || '',
-        seo_description: initialData.seo_description || ''
+        seo_description: initialData.seo_description || '',
+        seo_title_ru: initialData.seo_title_ru || '',
+        seo_description_ru: initialData.seo_description_ru || '',
+        seo_title_en: initialData.seo_title_en || '',
+        seo_description_en: initialData.seo_description_en || '',
+        seo_title_pl: initialData.seo_title_pl || '',
+        seo_description_pl: initialData.seo_description_pl || '',
+        // Остальные поля
+        status: initialData.status || 'draft',
+        category: initialData.category || '',
+        tags: initialData.tags || [],
+        author_id: initialData.author_id,
+        featured_image: initialData.featured_image || '',
       });
       setRawTags(initialData.tags?.join(', ') || '');
     }
@@ -141,203 +162,291 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
             </div>
           </div>
 
-          {/* Вкладки языков */}
-          <div className="space-y-6">
-            <div className="border-b border-gray-200">
-              <div className="flex gap-4">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('ua')}
-                  className={`pb-2 px-1 font-medium text-sm transition-all border-b-2 ${activeTab === 'ua'
-                      ? 'text-blue-600 border-blue-600'
-                      : 'text-gray-500 border-transparent hover:text-gray-700'
-                    }`}
-                >
-                  🇺🇦 Українська
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('ru')}
-                  className={`pb-2 px-1 font-medium text-sm transition-all border-b-2 ${activeTab === 'ru'
-                      ? 'text-blue-600 border-blue-600'
-                      : 'text-gray-500 border-transparent hover:text-gray-700'
-                    }`}
-                >
-                  🇷🇺 Русский
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('en')}
-                  className={`pb-2 px-1 font-medium text-sm transition-all border-b-2 ${activeTab === 'en'
-                      ? 'text-blue-600 border-blue-600'
-                      : 'text-gray-500 border-transparent hover:text-gray-700'
-                    }`}
-                >
-                  🇺🇸 English
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('pl')}
-                  className={`pb-2 px-1 font-medium text-sm transition-all border-b-2 ${activeTab === 'pl'
-                      ? 'text-blue-600 border-blue-600'
-                      : 'text-gray-500 border-transparent hover:text-gray-700'
-                    }`}
-                >
-                  🇵🇱 Polski
-                </button>
+          {/* Табы для языков */}
+          <div className="col-span-2">
+            {/* Навигация табов */}
+            <div className="border-b border-gray-200 mb-6">
+              <div className="flex gap-1">
+                {[
+                  { key: 'ua', label: '🇺🇦 Українська', required: true },
+                  { key: 'ru', label: '🇷🇺 Русский' },
+                  { key: 'en', label: '🇺🇸 English' },
+                  { key: 'pl', label: '🇵🇱 Polski' }
+                ].map(tab => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setActiveTab(tab.key as any)}
+                    className={`px-4 py-2 font-medium transition-colors ${activeTab === tab.key
+                      ? 'text-blue-600 border-b-2 border-blue-600'
+                      : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                  >
+                    {tab.label} {tab.required && '*'}
+                  </button>
+                ))}
               </div>
             </div>
 
-            {/* Контент украинской вкладки */}
+            {/* УКРАИНСКАЯ ВКЛАДКА (Основная) */}
             {activeTab === 'ua' && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Заголовок (Українська) *
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Заголовок <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    required
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                    placeholder="Введіть заголовок..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    required
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Зміст (Українська) *
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Зміст <span className="text-red-500">*</span>
                   </label>
                   <textarea
-                    required
-                    rows={12}
                     value={formData.content}
                     onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
-                    placeholder="Напишіть контент..."
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
+                    rows={12}
+                    required
                   />
+                </div>
+                {/* SEO для украинского */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-semibold mb-4">SEO Configuration (UA)</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        SEO Title
+                        <span className="text-gray-500 text-xs ml-2">Макс 60 символів</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.seo_title}
+                        onChange={(e) => setFormData({ ...formData, seo_title: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                        maxLength={60}
+                        placeholder="Залиште порожнім для автогенерації"
+
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        SEO Description
+                        <span className="text-gray-500 text-xs ml-2">Макс 160 символів</span>
+                      </label>
+                      <textarea
+                        value={formData.seo_description}
+                        onChange={(e) => setFormData({ ...formData, seo_description: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                        rows={3}
+                        maxLength={160}
+                        placeholder="Короткий опис для пошукових систем"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Контент русской вкладки */}
+            {/* РУССКАЯ ВКЛАДКА */}
             {activeTab === 'ru' && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Заголовок (Русский)
                   </label>
                   <input
                     type="text"
                     value={formData.title_ru}
                     onChange={(e) => setFormData({ ...formData, title_ru: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-                    placeholder="Оставьте пустым, если перевода нет"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                    placeholder="Оставьте пустым, если нет перевода"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Содержание (Русский)
                   </label>
                   <textarea
-                    rows={12}
                     value={formData.content_ru}
                     onChange={(e) => setFormData({ ...formData, content_ru: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
-                    placeholder="Оставьте пустым, если перевода нет"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                    rows={12}
+                    placeholder="Оставьте пустым, если нет перевода"
                   />
+                </div>
+                {/* SEO для русского */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-semibold mb-4">SEO Configuration (RU)</h3>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        SEO Title
+                        <span className="text-gray-500 text-xs ml-2">Макс 60 символов</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.seo_title_ru}
+                        onChange={(e) => setFormData({ ...formData, seo_title_ru: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                        maxLength={60}
+                        placeholder="Оставьте пустым для автогенерации"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        SEO Description
+                        <span className="text-gray-500 text-xs ml-2">Макс 160 символов</span>
+                      </label>
+                      <textarea
+                        value={formData.seo_description_ru}
+                        onChange={(e) => setFormData({ ...formData, seo_description_ru: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                        rows={3}
+                        maxLength={160}
+                        placeholder="Краткое описание для поисковиков"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Контент английской вкладки */}
+            {/* АНГЛИЙСКАЯ ВКЛАДКА */}
             {activeTab === 'en' && (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Title (English)
                   </label>
                   <input
                     type="text"
                     value={formData.title_en}
                     onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
                     placeholder="Leave empty if no translation"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Content (English)
                   </label>
                   <textarea
-                    rows={12}
                     value={formData.content_en}
                     onChange={(e) => setFormData({ ...formData, content_en: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                    rows={12}
                     placeholder="Leave empty if no translation"
                   />
+                </div>
+                {/* SEO для английского */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-semibold mb-4">SEO Configuration (EN)</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        SEO Title
+                        <span className="text-gray-500 text-xs ml-2">Max 60 chars</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.seo_title_en}
+                        onChange={(e) => setFormData({ ...formData, seo_title_en: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                        maxLength={60}
+                        placeholder="Leave empty for auto-generation"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        SEO Description
+                        <span className="text-gray-500 text-xs ml-2">Max 160 chars</span>
+                      </label>
+                      <textarea
+                        value={formData.seo_description_en}
+                        onChange={(e) => setFormData({ ...formData, seo_description_en: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                        rows={3}
+                        maxLength={160}
+                        placeholder="Short description for search engines"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
 
-            {/* Контент польской вкладки */}
+            {/* ПОЛЬСКАЯ ВКЛАДКА */}
             {activeTab === 'pl' && (
-              <div className="space-y-4">
+
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tytuł (Polski)
                   </label>
                   <input
                     type="text"
                     value={formData.title_pl}
                     onChange={(e) => setFormData({ ...formData, title_pl: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
                     placeholder="Pozostaw puste, jeśli nie ma tłumaczenia"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Treść (Polski)
                   </label>
                   <textarea
-                    rows={12}
                     value={formData.content_pl}
                     onChange={(e) => setFormData({ ...formData, content_pl: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
-                    placeholder="Pozostaw puste, если не ма tłumaczenia"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                    rows={12}
+                    placeholder="Pozostaw puste, jeśli nie ma tłumaczenia"
                   />
+                </div>
+                {/* SEO для польского */}
+                <div className="border-t border-gray-200 pt-6">
+                  <h3 className="text-lg font-semibold mb-4">SEO Configuration (PL)</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        SEO Tytuł
+                        <span className="text-gray-500 text-xs ml-2">Maks 60 znaków</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.seo_title_pl}
+                        onChange={(e) => setFormData({ ...formData, seo_title_pl: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                        maxLength={60}
+                        placeholder="Pozostaw puste dla automatycznego generowania"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        SEO Opis
+                        <span className="text-gray-500 text-xs ml-2">Maks 160 znaków</span>
+                      </label>
+                      <textarea
+                        value={formData.seo_description_pl}
+                        onChange={(e) => setFormData({ ...formData, seo_description_pl: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md"
+                        rows={3}
+                        maxLength={160}
+                        placeholder="Krótki opis dla wyszukiwarek"
+                      />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
-          </div>
-
-          {/* SEO Section */}
-          <div className="pt-4 border-t border-gray-100">
-            <h4 className="text-sm font-semibold text-gray-900 mb-4">SEO Configuration</h4>
-            <div className="grid grid-cols-1 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase mb-1">SEO Title</label>
-                <input
-                  type="text"
-                  name="seo_title"
-                  value={formData.seo_title}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  placeholder="Meta title (optional)"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 uppercase mb-1">SEO Description</label>
-                <textarea
-                  name="seo_description"
-                  rows={3}
-                  value={formData.seo_description}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                  placeholder="Meta description (optional)"
-                />
-              </div>
-            </div>
           </div>
         </div>
 
@@ -363,8 +472,8 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                 type="submit"
                 disabled={isLoading}
                 className={`w-full flex items-center justify-center space-x-2 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isEditMode
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                    : 'bg-blue-600 hover:bg-blue-700'
+                  ? 'bg-emerald-600 hover:bg-emerald-700'
+                  : 'bg-blue-600 hover:bg-blue-700'
                   }`}
               >
                 {isLoading ? <Loader2 className="animate-spin" size={18} /> : (isEditMode ? <Save size={18} /> : <Send size={18} />)}
