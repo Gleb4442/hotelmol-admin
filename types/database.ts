@@ -52,6 +52,12 @@ export interface BlogPost {
   title: string;
   slug: string;
   content: string;
+  title_ru?: string;
+  content_ru?: string;
+  title_en?: string;
+  content_en?: string;
+  title_pl?: string;
+  content_pl?: string;
   author_id: number;
   status: 'published' | 'draft' | 'archived';
   published_at?: string;

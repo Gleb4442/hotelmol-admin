@@ -17,59 +17,59 @@ export interface BlogResponse {
 
 export const fetchBlogPosts = async (params: BlogQueryParams): Promise<BlogResponse> => {
   return safeApiCall(async () => {
-      const limit = params.pageSize;
-      const offset = (params.page - 1) * params.pageSize;
+    const limit = params.pageSize;
+    const offset = (params.page - 1) * params.pageSize;
 
-      // Conditional Where Clause construction for Neon/Postgres
-      // Note: @neondatabase/serverless supports template literals for parameterized queries
-      
-      let posts;
-      let totalResult;
+    // Conditional Where Clause construction for Neon/Postgres
+    // Note: @neondatabase/serverless supports template literals for parameterized queries
 
-      if (params.status && params.status !== 'all') {
-          // Fetch with Filter
-          posts = await sql`
+    let posts;
+    let totalResult;
+
+    if (params.status && params.status !== 'all') {
+      // Fetch with Filter
+      posts = await sql`
             SELECT * FROM blog_posts 
             WHERE status = ${params.status} 
             ORDER BY created_at DESC 
             LIMIT ${limit} OFFSET ${offset}
           `;
-          totalResult = await sql`SELECT COUNT(*) FROM blog_posts WHERE status = ${params.status}`;
-      } else {
-          // Fetch All
-          posts = await sql`
+      totalResult = await sql`SELECT COUNT(*) FROM blog_posts WHERE status = ${params.status}`;
+    } else {
+      // Fetch All
+      posts = await sql`
             SELECT * FROM blog_posts 
             ORDER BY created_at DESC 
             LIMIT ${limit} OFFSET ${offset}
           `;
-          totalResult = await sql`SELECT COUNT(*) FROM blog_posts`;
-      }
+      totalResult = await sql`SELECT COUNT(*) FROM blog_posts`;
+    }
 
-      // Map DB result to TypeScript interface (ensure types match)
-      const mappedPosts: BlogPost[] = posts.map((row: any) => ({
-          ...row,
-          // Ensure JSONB fields are parsed if driver returns string
-          tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags,
-      }));
+    // Map DB result to TypeScript interface (ensure types match)
+    const mappedPosts: BlogPost[] = posts.map((row: any) => ({
+      ...row,
+      // Ensure JSONB fields are parsed if driver returns string
+      tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags,
+    }));
 
-      return { 
-        items: mappedPosts, 
-        total: Number(totalResult[0].count) 
-      };
+    return {
+      items: mappedPosts,
+      total: Number(totalResult[0].count)
+    };
   }, 'fetchBlogPosts');
 };
 
 export const fetchBlogPostById = async (id: number): Promise<BlogPost> => {
   return safeApiCall(async () => {
-      const result = await sql`SELECT * FROM blog_posts WHERE id = ${id}`;
-      
-      if (result.length === 0) throw new Error('Post not found');
-      
-      const row = result[0];
-      return {
-          ...row,
-          tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags,
-      } as BlogPost;
+    const result = await sql`SELECT * FROM blog_posts WHERE id = ${id}`;
+
+    if (result.length === 0) throw new Error('Post not found');
+
+    const row = result[0];
+    return {
+      ...row,
+      tags: typeof row.tags === 'string' ? JSON.parse(row.tags) : row.tags,
+    } as BlogPost;
   }, `fetchBlogPostById:${id}`);
 };
 
@@ -83,15 +83,21 @@ export const createLocalBlogPost = (data: Partial<BlogPost>) => {
 
 export const updateBlogPost = async (id: number, data: Partial<BlogPost>): Promise<BlogPost> => {
   return safeApiCall(async () => {
-      // Dynamic update query construction is safer with ORM, but raw SQL:
-      // We will update specific fields that are editable
-      
-      const result = await sql`
+    // Dynamic update query construction is safer with ORM, but raw SQL:
+    // We will update specific fields that are editable
+
+    const result = await sql`
         UPDATE blog_posts 
         SET 
           title = ${data.title || ''},
           slug = ${data.slug || ''},
           content = ${data.content || ''},
+          title_ru = ${data.title_ru || null},
+          content_ru = ${data.content_ru || null},
+          title_en = ${data.title_en || null},
+          content_en = ${data.content_en || null},
+          title_pl = ${data.title_pl || null},
+          content_pl = ${data.content_pl || null},
           status = ${data.status || 'draft'},
           category = ${data.category || 'General'},
           tags = ${JSON.stringify(data.tags || [])},
@@ -102,14 +108,14 @@ export const updateBlogPost = async (id: number, data: Partial<BlogPost>): Promi
         RETURNING *
       `;
 
-      if (result.length === 0) throw new Error('Failed to update post');
-      return result[0] as BlogPost;
+    if (result.length === 0) throw new Error('Failed to update post');
+    return result[0] as BlogPost;
   }, `updateBlogPost:${id}`);
 };
 
 export const deleteBlogPost = async (id: number): Promise<boolean> => {
   return safeApiCall(async () => {
-      await sql`DELETE FROM blog_posts WHERE id = ${id}`;
-      return true;
+    await sql`DELETE FROM blog_posts WHERE id = ${id}`;
+    return true;
   }, `deleteBlogPost:${id}`);
 };

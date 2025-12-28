@@ -14,11 +14,17 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
   const isEditMode = !!initialData;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const [formData, setFormData] = useState<PublishPostPayload>({
     title: '',
     slug: '',
     content: '',
+    title_ru: '',
+    content_ru: '',
+    title_en: '',
+    content_en: '',
+    title_pl: '',
+    content_pl: '',
     status: 'draft',
     category: 'General',
     tags: [],
@@ -26,6 +32,8 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
     seo_title: '',
     seo_description: ''
   });
+
+  const [activeTab, setActiveTab] = useState<'ua' | 'ru' | 'en' | 'pl'>('ua');
 
   const [rawTags, setRawTags] = useState('');
 
@@ -36,6 +44,12 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
         title: initialData.title,
         slug: initialData.slug,
         content: initialData.content,
+        title_ru: initialData.title_ru || '',
+        content_ru: initialData.content_ru || '',
+        title_en: initialData.title_en || '',
+        content_en: initialData.content_en || '',
+        title_pl: initialData.title_pl || '',
+        content_pl: initialData.content_pl || '',
         status: initialData.status,
         category: initialData.category,
         tags: initialData.tags,
@@ -49,15 +63,15 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    
+
     setFormData(prev => {
       const updates: any = { [name]: value };
-      
+
       // Auto-generate slug from title ONLY if creating new post and slug is untouched
       if (!isEditMode && name === 'title' && (!prev.slug || prev.slug === prev.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'))) {
         updates.slug = value.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
       }
-      
+
       return { ...prev, ...updates };
     });
   };
@@ -80,10 +94,10 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
       } else {
         // CREATE MODE: Send to N8N
         const n8nResult = await publishBlogPost(payload);
-        
+
         // If N8N success, we also create it locally to update the UI immediately
         if (n8nResult.success) {
-           createLocalBlogPost(payload as unknown as Partial<BlogPost>);
+          createLocalBlogPost(payload as unknown as Partial<BlogPost>);
         }
       }
 
@@ -109,20 +123,6 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
       <form onSubmit={handleSubmit} className="p-6 grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Left Column: Main Content */}
         <div className="lg:col-span-2 space-y-6">
-          
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
-            <input
-              type="text"
-              name="title"
-              required
-              value={formData.title}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
-              placeholder="Enter post title..."
-            />
-          </div>
 
           {/* Slug */}
           <div>
@@ -141,18 +141,174 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
             </div>
           </div>
 
-          {/* Content */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
-            <textarea
-              name="content"
-              required
-              rows={12}
-              value={formData.content}
-              onChange={handleInputChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
-              placeholder="Write your content here (Markdown supported)..."
-            />
+          {/* Вкладки языков */}
+          <div className="space-y-6">
+            <div className="border-b border-gray-200">
+              <div className="flex gap-4">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('ua')}
+                  className={`pb-2 px-1 font-medium text-sm transition-all border-b-2 ${activeTab === 'ua'
+                      ? 'text-blue-600 border-blue-600'
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                    }`}
+                >
+                  🇺🇦 Українська
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('ru')}
+                  className={`pb-2 px-1 font-medium text-sm transition-all border-b-2 ${activeTab === 'ru'
+                      ? 'text-blue-600 border-blue-600'
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                    }`}
+                >
+                  🇷🇺 Русский
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('en')}
+                  className={`pb-2 px-1 font-medium text-sm transition-all border-b-2 ${activeTab === 'en'
+                      ? 'text-blue-600 border-blue-600'
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                    }`}
+                >
+                  🇺🇸 English
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('pl')}
+                  className={`pb-2 px-1 font-medium text-sm transition-all border-b-2 ${activeTab === 'pl'
+                      ? 'text-blue-600 border-blue-600'
+                      : 'text-gray-500 border-transparent hover:text-gray-700'
+                    }`}
+                >
+                  🇵🇱 Polski
+                </button>
+              </div>
+            </div>
+
+            {/* Контент украинской вкладки */}
+            {activeTab === 'ua' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Заголовок (Українська) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    placeholder="Введіть заголовок..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Зміст (Українська) *
+                  </label>
+                  <textarea
+                    required
+                    rows={12}
+                    value={formData.content}
+                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
+                    placeholder="Напишіть контент..."
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Контент русской вкладки */}
+            {activeTab === 'ru' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Заголовок (Русский)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title_ru}
+                    onChange={(e) => setFormData({ ...formData, title_ru: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    placeholder="Оставьте пустым, если перевода нет"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Содержание (Русский)
+                  </label>
+                  <textarea
+                    rows={12}
+                    value={formData.content_ru}
+                    onChange={(e) => setFormData({ ...formData, content_ru: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
+                    placeholder="Оставьте пустым, если перевода нет"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Контент английской вкладки */}
+            {activeTab === 'en' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Title (English)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title_en}
+                    onChange={(e) => setFormData({ ...formData, title_en: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    placeholder="Leave empty if no translation"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Content (English)
+                  </label>
+                  <textarea
+                    rows={12}
+                    value={formData.content_en}
+                    onChange={(e) => setFormData({ ...formData, content_en: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
+                    placeholder="Leave empty if no translation"
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* Контент польской вкладки */}
+            {activeTab === 'pl' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Tytuł (Polski)
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.title_pl}
+                    onChange={(e) => setFormData({ ...formData, title_pl: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                    placeholder="Pozostaw puste, jeśli nie ma tłumaczenia"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Treść (Polski)
+                  </label>
+                  <textarea
+                    rows={12}
+                    value={formData.content_pl}
+                    onChange={(e) => setFormData({ ...formData, content_pl: e.target.value })}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none font-mono text-sm"
+                    placeholder="Pozostaw puste, если не ма tłumaczenia"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* SEO Section */}
@@ -187,7 +343,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
 
         {/* Right Column: Metadata */}
         <div className="space-y-6">
-          
+
           {/* Publish Actions */}
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
             <h4 className="text-sm font-medium text-gray-900 mb-3">Publishing</h4>
@@ -202,15 +358,14 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                 <option value="published">Published</option>
                 <option value="archived">Archived</option>
               </select>
-              
+
               <button
                 type="submit"
                 disabled={isLoading}
-                className={`w-full flex items-center justify-center space-x-2 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                  isEditMode 
-                    ? 'bg-emerald-600 hover:bg-emerald-700' 
+                className={`w-full flex items-center justify-center space-x-2 text-white px-4 py-2 rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isEditMode
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
                     : 'bg-blue-600 hover:bg-blue-700'
-                }`}
+                  }`}
               >
                 {isLoading ? <Loader2 className="animate-spin" size={18} /> : (isEditMode ? <Save size={18} /> : <Send size={18} />)}
                 <span>
@@ -222,50 +377,50 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
 
           {/* Taxonomy */}
           <div className="p-4 border border-gray-200 rounded-lg">
-             <h4 className="text-sm font-medium text-gray-900 mb-3">Organization</h4>
-             <div className="space-y-4">
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Category</label>
-                  <select
-                    name="category"
-                    value={formData.category}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm"
-                  >
-                    <option value="General">General</option>
-                    <option value="Revenue">Revenue Management</option>
-                    <option value="Marketing">Hotel Marketing</option>
-                    <option value="Operations">Operations</option>
-                    <option value="Tech">Technology</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Tags (comma separated)</label>
-                  <input
-                    type="text"
-                    value={rawTags}
-                    onChange={(e) => setRawTags(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
-                    placeholder="finance, growth, summer..."
-                  />
-                </div>
-             </div>
+            <h4 className="text-sm font-medium text-gray-900 mb-3">Organization</h4>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Category</label>
+                <select
+                  name="category"
+                  value={formData.category}
+                  onChange={handleInputChange}
+                  className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md text-sm"
+                >
+                  <option value="General">General</option>
+                  <option value="Revenue">Revenue Management</option>
+                  <option value="Marketing">Hotel Marketing</option>
+                  <option value="Operations">Operations</option>
+                  <option value="Tech">Technology</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Tags (comma separated)</label>
+                <input
+                  type="text"
+                  value={rawTags}
+                  onChange={(e) => setRawTags(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+                  placeholder="finance, growth, summer..."
+                />
+              </div>
+            </div>
           </div>
 
           {/* Author */}
           <div className="p-4 border border-gray-200 rounded-lg">
-             <h4 className="text-sm font-medium text-gray-900 mb-3">Attribution</h4>
-             <div>
-                <label className="block text-xs text-gray-500 mb-1">Author ID</label>
-                <input
-                  type="number"
-                  name="author_id"
-                  value={formData.author_id}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-50"
-                  readOnly
-                />
-             </div>
+            <h4 className="text-sm font-medium text-gray-900 mb-3">Attribution</h4>
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">Author ID</label>
+              <input
+                type="number"
+                name="author_id"
+                value={formData.author_id}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-50"
+                readOnly
+              />
+            </div>
           </div>
 
           {error && (
