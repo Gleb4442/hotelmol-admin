@@ -63,7 +63,7 @@ export const ServicesManager: React.FC = () => {
             loadServices();
         } catch (error) {
             console.error("Failed to save", error);
-            alert("Failed to save service. Check logs.");
+            alert(`Failed to save service: ${error instanceof Error ? error.message : String(error)}`);
         } finally {
             setIsSaving(false);
         }

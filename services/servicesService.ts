@@ -14,8 +14,8 @@ export const fetchServices = async (): Promise<Service[]> => {
 export const createService = async (data: Partial<Service>): Promise<Service> => {
     return safeApiCall(async () => {
         const result = await sql`
-      INSERT INTO services (title, price, description, updated_at)
-      VALUES (${data.title}, ${data.price}, ${data.description}, NOW())
+      INSERT INTO services (title, price, description, active, updated_at)
+      VALUES (${data.title}, ${data.price}, ${data.description}, ${data.active ?? true}, NOW())
       RETURNING *
     `;
         const newService = result[0] as Service;
