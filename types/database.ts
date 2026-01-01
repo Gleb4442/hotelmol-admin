@@ -80,4 +80,20 @@ export interface BlogPost {
   updated_at: string;
 }
 
-export type TableName = 'demo_requests' | 'contact_submissions' | 'roi_calculations' | 'cookie_consents' | 'blog_posts';
+export type TableName = 'demo_requests' | 'contact_submissions' | 'roi_calculations' | 'cookie_consents' | 'blog_posts' | 'services' | 'chat_logs';
+
+export interface Service {
+  id: number;
+  title: string;
+  price: string;
+  description: string;
+  created_at: string;
+}
+
+export interface ChatLog {
+  id: number;
+  session_id: string;
+  user_message: string;
+  ai_response: string;
+  created_at: string;
+}

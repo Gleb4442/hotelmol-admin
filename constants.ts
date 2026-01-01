@@ -1,4 +1,4 @@
-import { BlogPost, ContactSubmission, DemoRequest, RoiCalculation, CookieConsent } from "./types/database";
+import { BlogPost, ContactSubmission, DemoRequest, RoiCalculation, CookieConsent, Service, ChatLog } from "./types/database";
 import { Post } from "./types";
 
 /**
@@ -20,7 +20,7 @@ const getEnv = (key: string, required = false): string => {
     console.warn(`Missing Environment Variable: ${key}. App may not function correctly in production.`);
     return '';
   }
-  return val || '';
+  return val ? String(val) : '';
 };
 
 export const CONFIG = {

@@ -17,10 +17,12 @@ export interface Post {
 
 export enum NavItem {
   DASHBOARD = 'dashboard',
-  SCHEMA = 'schema', 
+  SCHEMA = 'schema',
   POSTS = 'posts',
   COMPLIANCE = 'compliance', // Stage 5
   SETTINGS = 'settings',
+  AI_TRAINING = 'ai_training',
+  CHAT_LOGS = 'chat_logs'
 }
 
 // Stage 3: Dashboard Types

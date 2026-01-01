@@ -11,6 +11,8 @@ import { checkSession, logout } from './services/authService';
 import { StatusCard } from './components/StatusCard';
 import { BlogPostForm } from './components/BlogPostForm';
 import { LoginPage } from './components/LoginPage';
+import { ServicesManager } from './components/ServicesManager';
+import { ChatHistory } from './components/ChatHistory';
 import {
   Activity,
   LayoutDashboard,
@@ -36,7 +38,9 @@ import {
   SortAsc,
   Pencil,
   Trash2,
-  LogOut
+  LogOut,
+  Brain,
+  MessageSquareText
 } from 'lucide-react';
 
 const SidebarItem: React.FC<{
@@ -543,11 +547,24 @@ const App: React.FC = () => {
             label="Compliance Logs"
           />
           <SidebarItem
-            active={activeTab === NavItem.SETTINGS}
-            onClick={() => { setActiveTab(NavItem.SETTINGS); }}
             icon={<Settings size={20} />}
             label="Configuration"
           />
+          <div className="pt-4 mt-4 border-t border-gray-100">
+            <h4 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">AI Control</h4>
+            <SidebarItem
+              active={activeTab === NavItem.AI_TRAINING}
+              onClick={() => { setActiveTab(NavItem.AI_TRAINING); }}
+              icon={<Brain size={20} />}
+              label="Knowledge Base"
+            />
+            <SidebarItem
+              active={activeTab === NavItem.CHAT_LOGS}
+              onClick={() => { setActiveTab(NavItem.CHAT_LOGS); }}
+              icon={<MessageSquareText size={20} />}
+              label="Chat History"
+            />
+          </div>
         </nav>
 
         <div className="p-4 border-t border-gray-100 space-y-4">
@@ -582,6 +599,8 @@ const App: React.FC = () => {
               {activeTab === NavItem.POSTS && (postView === 'list' ? 'Content Management' : postView === 'create' ? 'Create New Post' : 'Edit Post')}
               {activeTab === NavItem.COMPLIANCE && 'GDPR & Cookie Logs'}
               {activeTab === NavItem.SETTINGS && 'Environment Variables'}
+              {activeTab === NavItem.AI_TRAINING && 'AI Knowledge Base'}
+              {activeTab === NavItem.CHAT_LOGS && 'AI Chat Monitoring'}
             </h1>
             {postView === 'create' && (
               <span className="text-sm text-gray-500 mt-1">Drafting content for N8N publication</span>
@@ -738,6 +757,10 @@ const App: React.FC = () => {
 
           {/* SCHEMA VIEW */}
           {activeTab === NavItem.SCHEMA && <SchemaViewer />}
+
+          {/* AI VIEWS */}
+          {activeTab === NavItem.AI_TRAINING && <ServicesManager />}
+          {activeTab === NavItem.CHAT_LOGS && <ChatHistory />}
 
           {/* POSTS VIEW - LIST */}
           {activeTab === NavItem.POSTS && postView === 'list' && (
