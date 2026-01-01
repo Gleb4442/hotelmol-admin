@@ -87,7 +87,8 @@ export interface Service {
   title: string;
   price: string;
   description: string;
-  created_at: string;
+  active: boolean;
+  updated_at: string;
 }
 
 export interface ChatLog {

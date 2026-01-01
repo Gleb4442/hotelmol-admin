@@ -6,7 +6,7 @@ import { Logger } from '../lib/logger';
 
 export const fetchServices = async (): Promise<Service[]> => {
     return safeApiCall(async () => {
-        const rows = await sql`SELECT * FROM services ORDER BY created_at DESC`;
+        const rows = await sql`SELECT * FROM services ORDER BY updated_at DESC`;
         return rows as Service[];
     }, 'fetchServices');
 };
@@ -14,7 +14,7 @@ export const fetchServices = async (): Promise<Service[]> => {
 export const createService = async (data: Partial<Service>): Promise<Service> => {
     return safeApiCall(async () => {
         const result = await sql`
-      INSERT INTO services (title, price, description, created_at)
+      INSERT INTO services (title, price, description, updated_at)
       VALUES (${data.title}, ${data.price}, ${data.description}, NOW())
       RETURNING *
     `;
@@ -31,7 +31,7 @@ export const updateService = async (id: number, data: Partial<Service>): Promise
     return safeApiCall(async () => {
         const result = await sql`
       UPDATE services
-      SET title = ${data.title}, price = ${data.price}, description = ${data.description}
+      SET title = ${data.title}, price = ${data.price}, description = ${data.description}, updated_at = NOW()
       WHERE id = ${id}
       RETURNING *
     `;
