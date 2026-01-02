@@ -21,11 +21,12 @@ export interface PublishPostPayload {
   featured_image?: string;
 }
 
+
 /**
- * Publishes a blog post via N8N Webhook.
- * Uses safeApiCall for rate limiting and error handling.
+ * Generic function to send data to N8N Webhook.
+ * Supports both JSON (automatically stringified) and FormData (for file uploads).
  */
-export async function publishBlogPost(data: PublishPostPayload) {
+export async function sendToN8n(data: any | FormData) {
   return safeApiCall(async () => {
     // 1. Security Check: HTTPS
     if (!CONFIG.N8N_WEBHOOK_URL.startsWith('https://')) {
@@ -36,21 +37,38 @@ export async function publishBlogPost(data: PublishPostPayload) {
       throw new Error("Configuration Error: Missing API Key.");
     }
 
-    Logger.info("Initiating N8N Webhook Call", { url: CONFIG.N8N_WEBHOOK_URL });
+    Logger.info("Initiating N8N Webhook Call", { url: CONFIG.N8N_WEBHOOK_URL, type: data instanceof FormData ? 'FormData' : 'JSON' });
+
+    const headers: Record<string, string> = {
+      'Authorization': `Bearer ${CONFIG.N8N_WEBHOOK_SECRET}`,
+    };
+
+    let body;
+    if (data instanceof FormData) {
+      // Browser automatically sets Content-Type (multipart/form-data) with boundary
+      // Append standard metadata if available on FormData prototype (check to avoid error if readonly)
+      // Note: We can just append; standard FormData allows multiple values or we can just append
+      // without checking since we want these fields.
+      if (!data.has('timestamp')) data.append('timestamp', new Date().toISOString());
+      if (!data.has('source')) data.append('source', 'hotelmol-admin');
+      if (!data.has('environment')) data.append('environment', 'production');
+
+      body = data;
+    } else {
+      headers['Content-Type'] = 'application/json';
+      body = JSON.stringify({
+        ...data,
+        timestamp: new Date().toISOString(),
+        source: 'hotelmol-admin',
+        environment: 'production'
+      });
+    }
 
     try {
       const response = await fetch(CONFIG.N8N_WEBHOOK_URL, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-API-Key': CONFIG.N8N_WEBHOOK_SECRET, // 2. Auth: API Key Header
-        },
-        body: JSON.stringify({
-          ...data,
-          timestamp: new Date().toISOString(),
-          source: 'hotelmol-admin',
-          environment: 'production'
-        }),
+        headers,
+        body,
       });
 
       if (!response.ok) {
@@ -78,5 +96,10 @@ export async function publishBlogPost(data: PublishPostPayload) {
       }
       throw error;
     }
-  }, 'publishBlogPost');
+  }, 'sendToN8n');
 }
+
+/**
+ * Legacy alias for backward compatibility or specifically for posts
+ */
+export const publishBlogPost = sendToN8n;

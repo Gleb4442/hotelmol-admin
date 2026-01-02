@@ -109,6 +109,7 @@ export const updateBlogPost = async (id: number, data: Partial<BlogPost>): Promi
           seo_description_en = ${data.seo_description_en || null},
           seo_title_pl = ${data.seo_title_pl || null},
           seo_description_pl = ${data.seo_description_pl || null},
+          author_id = ${data.author_id || 0}, 
           updated_at = NOW()
         WHERE id = ${id}
         RETURNING *

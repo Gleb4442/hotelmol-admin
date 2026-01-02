@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Save, X, Send, Loader2 } from 'lucide-react';
 import { publishBlogPost, PublishPostPayload } from '../lib/n8n';
 import { updateBlogPost, createLocalBlogPost } from '../services/blogService';
-import { BlogPost } from '../types/database';
+import { fetchAuthors } from '../services/authorsService';
+import { BlogPost, Author } from '../types/database';
 
 interface BlogPostFormProps {
   initialData?: BlogPost; // If present, we are in EDIT mode
@@ -47,6 +48,11 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
   });
 
   const [rawTags, setRawTags] = useState('');
+  const [authors, setAuthors] = useState<Author[]>([]);
+
+  useEffect(() => {
+    fetchAuthors().then(data => setAuthors(data)).catch(console.error);
+  }, []);
 
   // Load initial data if editing
   useEffect(() => {
@@ -520,15 +526,18 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
           <div className="p-4 border border-gray-200 rounded-lg">
             <h4 className="text-sm font-medium text-gray-900 mb-3">Attribution</h4>
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Author ID</label>
-              <input
-                type="number"
+              <label className="block text-xs text-gray-500 mb-1">Author</label>
+              <select
                 name="author_id"
-                value={formData.author_id}
-                onChange={handleInputChange}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-50"
-                readOnly
-              />
+                value={formData.author_id || 0}
+                onChange={(e) => setFormData({ ...formData, author_id: Number(e.target.value) })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-white"
+              >
+                <option value={0}>Editorial Team (Default)</option>
+                {authors.map(author => (
+                  <option key={author.id} value={author.id}>{author.full_name}</option>
+                ))}
+              </select>
             </div>
           </div>
 

@@ -47,6 +47,15 @@ export interface CookieConsent {
   page_url: string;
 }
 
+export interface Author {
+  id: number;
+  full_name: string;
+  photo_url: string;
+  bio: string;
+  location: string;
+  created_at?: string;
+}
+
 export interface BlogPost {
   id: number;
   // Контент (украинский - основной)
@@ -70,7 +79,7 @@ export interface BlogPost {
   seo_title_pl?: string;
   seo_description_pl?: string;
   // Остальные поля (не менять)
-  author_id: number;
+  author_id?: number | null; // Made optional/nullable to handle legacy or "Editorial" fallback
   status: 'published' | 'draft' | 'archived';
   published_at?: string;
   featured_image?: string;

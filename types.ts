@@ -22,7 +22,8 @@ export enum NavItem {
   COMPLIANCE = 'compliance', // Stage 5
   SETTINGS = 'settings',
   AI_TRAINING = 'ai_training',
-  CHAT_LOGS = 'chat_logs'
+  CHAT_LOGS = 'chat_logs',
+  AUTHORS = 'authors'
 }
 
 // Stage 3: Dashboard Types

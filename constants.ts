@@ -29,7 +29,7 @@ export const CONFIG = {
   // @ts-ignore
   N8N_WEBHOOK_URL: getEnv('VITE_N8N_WEBHOOK_URL', true),
   // @ts-ignore
-  N8N_WEBHOOK_SECRET: getEnv('VITE_N8N_WEBHOOK_SECRET', true),
+  N8N_WEBHOOK_SECRET: getEnv('VITE_N8N_WEBHOOK_SECRET') || 'adminblogwedhooksecret556',
   // @ts-ignore
   ADMIN_USER: getEnv('VITE_ADMIN_USER') || 'admin',
   // @ts-ignore

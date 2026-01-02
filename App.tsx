@@ -13,6 +13,7 @@ import { BlogPostForm } from './components/BlogPostForm';
 import { LoginPage } from './components/LoginPage';
 import { ServicesManager } from './components/ServicesManager';
 import { ChatHistory } from './components/ChatHistory';
+import { AuthorsManager } from './components/AuthorsManager';
 import {
   Activity,
   LayoutDashboard,
@@ -541,6 +542,12 @@ const App: React.FC = () => {
             label="Content Manager"
           />
           <SidebarItem
+            active={activeTab === NavItem.AUTHORS}
+            onClick={() => { setActiveTab(NavItem.AUTHORS); }}
+            icon={<Users size={20} />}
+            label="Authors"
+          />
+          <SidebarItem
             active={activeTab === NavItem.COMPLIANCE}
             onClick={() => { setActiveTab(NavItem.COMPLIANCE); }}
             icon={<ShieldCheck size={20} />}
@@ -601,6 +608,7 @@ const App: React.FC = () => {
               {activeTab === NavItem.SETTINGS && 'Environment Variables'}
               {activeTab === NavItem.AI_TRAINING && 'AI Knowledge Base'}
               {activeTab === NavItem.CHAT_LOGS && 'AI Chat Monitoring'}
+              {activeTab === NavItem.AUTHORS && 'Authors Directory'}
             </h1>
             {postView === 'create' && (
               <span className="text-sm text-gray-500 mt-1">Drafting content for N8N publication</span>
@@ -761,6 +769,7 @@ const App: React.FC = () => {
           {/* AI VIEWS */}
           {activeTab === NavItem.AI_TRAINING && <ServicesManager />}
           {activeTab === NavItem.CHAT_LOGS && <ChatHistory />}
+          {activeTab === NavItem.AUTHORS && <AuthorsManager />}
 
           {/* POSTS VIEW - LIST */}
           {activeTab === NavItem.POSTS && postView === 'list' && (
