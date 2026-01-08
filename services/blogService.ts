@@ -1,6 +1,7 @@
 import { BlogPost } from '../types/database';
 import { safeApiCall } from '../lib/api';
 import { sql } from '../lib/db';
+import { deleteItem } from '../lib/n8n';
 
 export interface BlogQueryParams {
   page: number;
@@ -120,9 +121,6 @@ export const updateBlogPost = async (id: number, data: Partial<BlogPost>): Promi
   }, `updateBlogPost:${id}`);
 };
 
-export const deleteBlogPost = async (id: number): Promise<boolean> => {
-  return safeApiCall(async () => {
-    await sql`DELETE FROM blog_posts WHERE id = ${id}`;
-    return true;
-  }, `deleteBlogPost:${id}`);
+export const deleteBlogPost = async (id: number): Promise<any> => {
+  return deleteItem('post', id);
 };

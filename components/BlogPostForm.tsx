@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import { Save, X, Send, Loader2 } from 'lucide-react';
-import { publishBlogPost, PublishPostPayload } from '../lib/n8n';
+import { publishBlogPost, PublishPostPayload, sendToN8n } from '../lib/n8n';
 import { updateBlogPost, createLocalBlogPost } from '../services/blogService';
 import { fetchAuthors } from '../services/authorsService';
 import { BlogPost, Author } from '../types/database';
+import { toBase64 } from '../lib/utils';
 
 interface BlogPostFormProps {
   initialData?: BlogPost; // If present, we are in EDIT mode
@@ -15,6 +18,8 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
   const isEditMode = !!initialData;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const quillRef = useRef<ReactQuill>(null);
+
 
   // State for active tab
   const [activeTab, setActiveTab] = useState<'ua' | 'ru' | 'en' | 'pl'>('ua');
@@ -49,6 +54,54 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
 
   const [rawTags, setRawTags] = useState('');
   const [authors, setAuthors] = useState<Author[]>([]);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+
+  // Custom handler for Quill image button
+  const imageHandler = () => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const image_base64 = await toBase64(file);
+
+        try {
+          const res = await sendToN8n({
+            action: "upload_content_image",
+            post: { image_base64 }
+          });
+
+          if (res.url) {
+            const quill = quillRef.current.getEditor();
+            const range = quill.getSelection(true);
+            quill.insertEmbed(range.index, 'image', res.url);
+          }
+        } catch (err) {
+          console.error("Image upload failed", err);
+          setError("Image upload failed.");
+        }
+      }
+    };
+  };
+
+  const modules = {
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+        [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+        ['link', 'image'],
+        ['clean']
+      ],
+      handlers: {
+        image: imageHandler,
+      },
+    },
+  };
 
   useEffect(() => {
     fetchAuthors().then(data => setAuthors(data)).catch(console.error);
@@ -85,6 +138,9 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
         featured_image: initialData.featured_image || '',
       });
       setRawTags(initialData.tags?.join(', ') || '');
+      if (initialData.featured_image) {
+        setCoverImagePreview(initialData.featured_image);
+      }
     }
   }, [initialData]);
 
@@ -103,15 +159,28 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
     });
   };
 
+  const handleCoverImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setCoverImageFile(file);
+      setCoverImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
+      let featured_image_base64 = '';
+      if (coverImageFile) {
+        featured_image_base64 = await toBase64(coverImageFile);
+      }
+
       // Process tags
       const processedTags = rawTags.split(',').map(t => t.trim()).filter(Boolean);
-      const payload = { ...formData, tags: processedTags };
+      const payload = { ...formData, tags: processedTags, featured_image: featured_image_base64 };
 
       if (isEditMode && initialData) {
         // UPDATE MODE: Simulate PATCH request to DB
@@ -213,12 +282,13 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Зміст <span className="text-red-500">*</span>
                   </label>
-                  <textarea
+                  <ReactQuill
+                    ref={quillRef}
+                    theme="snow"
                     value={formData.content}
-                    onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
-                    rows={12}
-                    required
+                    onChange={(value) => setFormData({ ...formData, content: value })}
+                    modules={modules}
+                    className="bg-white"
                   />
                 </div>
                 {/* SEO для украинского */}
@@ -278,12 +348,12 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Содержание (Русский)
                   </label>
-                  <textarea
+                  <ReactQuill
+                    theme="snow"
                     value={formData.content_ru}
-                    onChange={(e) => setFormData({ ...formData, content_ru: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                    rows={12}
-                    placeholder="Оставьте пустым, если нет перевода"
+                    onChange={(value) => setFormData({ ...formData, content_ru: value })}
+                    modules={modules}
+                    className="bg-white"
                   />
                 </div>
                 {/* SEO для русского */}
@@ -344,12 +414,12 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Content (English)
                   </label>
-                  <textarea
+                  <ReactQuill
+                    theme="snow"
                     value={formData.content_en}
-                    onChange={(e) => setFormData({ ...formData, content_en: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                    rows={12}
-                    placeholder="Leave empty if no translation"
+                    onChange={(value) => setFormData({ ...formData, content_en: value })}
+                    modules={modules}
+                    className="bg-white"
                   />
                 </div>
                 {/* SEO для английского */}
@@ -409,12 +479,12 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Treść (Polski)
                   </label>
-                  <textarea
+                  <ReactQuill
+                    theme="snow"
                     value={formData.content_pl}
-                    onChange={(e) => setFormData({ ...formData, content_pl: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md"
-                    rows={12}
-                    placeholder="Pozostaw puste, jeśli nie ma tłumaczenia"
+                    onChange={(value) => setFormData({ ...formData, content_pl: value })}
+                    modules={modules}
+                    className="bg-white"
                   />
                 </div>
                 {/* SEO для польского */}
@@ -458,6 +528,27 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
 
         {/* Right Column: Metadata */}
         <div className="space-y-6">
+
+          {/* Cover Image Upload */}
+            <div className="p-4 border border-gray-200 rounded-lg">
+                <h4 className="text-sm font-medium text-gray-900 mb-3">Cover Image</h4>
+                <div className="w-full h-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center relative bg-gray-50">
+                    {coverImagePreview ? (
+                        <img src={coverImagePreview} alt="Cover preview" className="w-full h-full object-cover rounded-lg" />
+                    ) : (
+                        <div className="text-center text-gray-500">
+                            <p>Drop image here or click to upload</p>
+                            <p className="text-xs">16:9 recommended</p>
+                        </div>
+                    )}
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleCoverImageChange}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    />
+                </div>
+            </div>
 
           {/* Publish Actions */}
           <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">

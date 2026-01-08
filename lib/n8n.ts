@@ -103,3 +103,56 @@ export async function sendToN8n(data: any | FormData) {
  * Legacy alias for backward compatibility or specifically for posts
  */
 export const publishBlogPost = sendToN8n;
+
+/**
+ * Sends a delete request to the N8N delete webhook.
+ * @param type The type of item to delete ('author' or 'post').
+ * @param id The ID of the item to delete.
+ */
+export async function deleteItem(type: 'author' | 'post', id: number) {
+    const VITE_N8N_DELETE_WEBHOOK_URL = import.meta.env.VITE_N8N_DELETE_WEBHOOK_URL as string;
+
+    return safeApiCall(async () => {
+        if (!VITE_N8N_DELETE_WEBHOOK_URL) {
+            throw new Error("Configuration Error: Missing VITE_N8N_DELETE_WEBHOOK_URL.");
+        }
+        if (!VITE_N8N_DELETE_WEBHOOK_URL.startsWith('https://')) {
+            throw new Error("Security Error: N8N Delete Webhook must use HTTPS.");
+        }
+        if (!CONFIG.N8N_WEBHOOK_SECRET) {
+            throw new Error("Configuration Error: Missing API Key.");
+        }
+
+        Logger.info("Initiating N8N Delete Call", { url: VITE_N8N_DELETE_WEBHOOK_URL, type, id });
+
+        const headers: Record<string, string> = {
+            'Authorization': `${CONFIG.N8N_WEBHOOK_SECRET}`,
+            'Content-Type': 'application/json',
+        };
+
+        const body = JSON.stringify({
+            type,
+            id,
+            timestamp: new Date().toISOString(),
+            source: 'hotelmol-admin',
+        });
+
+        const response = await fetch(VITE_N8N_DELETE_WEBHOOK_URL, {
+            method: 'POST',
+            headers,
+            body,
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`N8N Delete Gateway Error: ${response.status} ${errorText}`);
+        }
+
+        const contentType = response.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+            return await response.json();
+        } else {
+            return { success: true, message: "Delete request accepted" };
+        }
+    }, 'deleteItem');
+}
