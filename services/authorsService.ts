@@ -1,7 +1,7 @@
 import { Author } from '../types/database';
 import { safeApiCall } from '../lib/api';
 import { sql } from '../lib/db';
-import { sendToN8n } from '../lib/n8n';
+import { sendToN8n, deleteItem } from '../lib/n8n';
 
 export const fetchAuthors = async (): Promise<Author[]> => {
     return safeApiCall(async () => {
@@ -12,20 +12,25 @@ export const fetchAuthors = async (): Promise<Author[]> => {
     }, 'fetchAuthors');
 };
 
-export const createAuthor = async (formData: FormData): Promise<any> => {
-    // Add logic flag for N8N to know this is an author creation
-    formData.append('action', 'create_author');
-    formData.append('source', 'admin_panel');
-
-    // Send to N8N
-    return sendToN8n(formData);
+export const createAuthor = async (data: object): Promise<any> => {
+    const payload = {
+        ...data,
+        action: 'create_author',
+        source: 'admin_panel'
+    };
+    return sendToN8n(payload);
 };
 
-export const updateAuthor = async (id: number, formData: FormData): Promise<any> => {
-    formData.append('action', 'update_author');
-    formData.append('author_id', id.toString());
-    formData.append('source', 'admin_panel');
+export const deleteAuthor = async (id: number): Promise<any> => {
+    return deleteItem('author', id);
+};
 
-    // Send to N8N
-    return sendToN8n(formData);
+export const updateAuthor = async (id: number, data: object): Promise<any> => {
+    const payload = {
+        ...data,
+        action: 'update_author',
+        author_id: id,
+        source: 'admin_panel'
+    };
+    return sendToN8n(payload);
 };

@@ -9,10 +9,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@neondatabase/serverless": "^1.0.2",
     "lucide-react": "^0.561.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
-    "@neondatabase/serverless": "^1.0.2"
+    "react-quill": "^2.0.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

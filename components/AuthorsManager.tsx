@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, User, Loader2, Save, X, MapPin } from 'lucide-react';
+import { Plus, Edit2, User, Loader2, Save, X, MapPin, Trash2 } from 'lucide-react';
 import { Author } from '../types/database';
-import { fetchAuthors, createAuthor, updateAuthor } from '../services/authorsService';
+import { fetchAuthors, createAuthor, updateAuthor, deleteAuthor } from '../services/authorsService';
+import { toBase64 } from '../lib/utils';
 
 export const AuthorsManager: React.FC = () => {
     const [authors, setAuthors] = useState<Author[]>([]);
@@ -72,13 +73,15 @@ export const AuthorsManager: React.FC = () => {
         setError(null);
 
         try {
-            const payload = new FormData();
-            payload.append('full_name', formData.full_name);
-            payload.append('bio', formData.bio);
-            payload.append('location', formData.location);
+            let photo_base64 = '';
             if (selectedFile) {
-                payload.append('photo', selectedFile);
+                photo_base64 = await toBase64(selectedFile);
             }
+
+            const payload = {
+                ...formData,
+                photo: photo_base64,
+            };
 
             if (editingAuthor) {
                 await updateAuthor(editingAuthor.id, payload);
@@ -92,6 +95,17 @@ export const AuthorsManager: React.FC = () => {
             setError(err.message || 'Failed to save author');
         } finally {
             setIsSubmitting(false);
+        }
+    };
+
+    const handleDelete = async (id: number) => {
+        if (window.confirm('Are you sure you want to delete this author? This action is irreversible.')) {
+            try {
+                await deleteAuthor(id);
+                loadAuthors(); // Refresh the list
+            } catch (err: any) {
+                setError(err.message || 'Failed to delete author');
+            }
         }
     };
 
@@ -252,13 +266,22 @@ export const AuthorsManager: React.FC = () => {
                                         {author.bio}
                                     </td>
                                     <td className="px-6 py-3 text-right">
-                                        <button
-                                            onClick={() => handleEditClick(author)}
-                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                            title="Edit Author"
-                                        >
-                                            <Edit2 size={16} />
-                                        </button>
+                                        <div className="flex items-center justify-end">
+                                            <button
+                                                onClick={() => handleEditClick(author)}
+                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title="Edit Author"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(author.id)}
+                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Delete Author"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
