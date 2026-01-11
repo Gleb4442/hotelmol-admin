@@ -26,27 +26,28 @@ const getEnv = (key: string, required = false): string => {
 export const CONFIG = {
   // @ts-ignore
   DATABASE_URL: getEnv('VITE_DATABASE_URL', true),
+  // N8N URLs - Always use relative paths to trigger Proxy (Vite/Vercel)
   // @ts-ignore
-  N8N_BLOG_OPS_URL: getEnv('VITE_N8N_PUBLISH_WEBHOOK_URL') || '/api/n8n/blog/write',
+  N8N_BLOG_OPS_URL: '/api/n8n/blog/write',
   // @ts-ignore
-  N8N_BLOG_GET_URL: getEnv('VITE_N8N_GET_DATA_WEBHOOK_URL') || '/api/n8n/get-blog-data',
+  N8N_BLOG_GET_URL: '/api/n8n/get-blog-data',
   // @ts-ignore
-  N8N_DELETE_ITEM_URL: getEnv('VITE_N8N_DELETE_WEBHOOK_URL') || '/api/n8n/delete-item',
+  N8N_DELETE_ITEM_URL: '/api/n8n/delete-item',
 
   // @ts-ignore
-  N8N_CHAT_URL: getEnv('VITE_N8N_CHAT_URL') || '/api/n8n/chat',
+  N8N_CHAT_URL: '/api/n8n/chat',
   // @ts-ignore
-  N8N_CHAT_HISTORY_URL: getEnv('VITE_N8N_CHAT_HISTORY_URL') || '/api/n8n/chat-history',
+  N8N_CHAT_HISTORY_URL: '/api/n8n/chat-history',
   // @ts-ignore
-  N8N_INGEST_URL: getEnv('VITE_N8N_INGEST_URL') || '/api/n8n/ingest-knowledge',
+  N8N_INGEST_URL: '/api/n8n/ingest-knowledge',
   // @ts-ignore
-  N8N_SERVICES_URL: getEnv('VITE_N8N_SERVICES_URL') || '/api/n8n/services', // For Knowledge Base CRUD
+  N8N_SERVICES_URL: '/api/n8n/services',
 
 
   // @ts-ignore
-  N8N_CONTACT_URL: getEnv('VITE_N8N_CONTACT_URL') || '/api/n8n/contact', // Reference
+  N8N_CONTACT_URL: '/api/n8n/contact',
   // @ts-ignore
-  N8N_COOKIE_URL: getEnv('VITE_N8N_COOKIE_URL') || '/api/n8n/cookie-consent', // Reference
+  N8N_COOKIE_URL: '/api/n8n/cookie-consent',
 
   // @ts-ignore
   N8N_WEBHOOK_SECRET: getEnv('VITE_N8N_WEBHOOK_SECRET') || 'adminblogwebhooksecret556',
