@@ -406,7 +406,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                     onChange={(val) => setFormData({ ...formData, content: val })}
                     placeholder="Write your article here..."
                   />
-                  />
+
                 </div>
                 {/* SEO для украинского */}
                 <div className="border-t border-gray-200 pt-6">
@@ -470,7 +470,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                     onChange={(val) => setFormData({ ...formData, content_ru: val })}
                     placeholder="Оставьте пустым, если нет перевода"
                   />
-                  />
+
                 </div>
                 {/* SEO для русского */}
                 <div className="border-t border-gray-200 pt-6">
@@ -535,7 +535,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                     onChange={(val) => setFormData({ ...formData, content_en: val })}
                     placeholder="Leave empty if no translation"
                   />
-                  />
+
                 </div>
                 {/* SEO для английского */}
                 <div className="border-t border-gray-200 pt-6">
