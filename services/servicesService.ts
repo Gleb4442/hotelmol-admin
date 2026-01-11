@@ -36,6 +36,12 @@ export const createService = async (data: Partial<Service>): Promise<Service> =>
                 service: { ...data, category: (data as any).category }
             })
         });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Server error ${response.status}: ${text.substring(0, 100)}`);
+        }
+
         const json = await response.json();
         return (json.service || data) as Service;
     }, 'createService');
@@ -54,6 +60,12 @@ export const updateService = async (id: number, data: Partial<Service>): Promise
                 service: { ...data, id, category: (data as any).category }
             })
         });
+
+        if (!response.ok) {
+            const text = await response.text();
+            throw new Error(`Server error ${response.status}: ${text.substring(0, 100)}`);
+        }
+
         const json = await response.json();
         return (json.service || { ...data, id }) as Service;
     }, 'updateService');
