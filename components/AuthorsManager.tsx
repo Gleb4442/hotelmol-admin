@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, User, Loader2, Save, X, MapPin } from 'lucide-react';
 import { Author } from '../types/database';
-import { fetchAuthors, createAuthor, updateAuthor } from '../services/authorsService';
+import { fetchAuthors, createAuthor, updateAuthor, AuthorInput } from '../services/authorsService';
+import { fileToBase64 } from '../lib/n8n';
 
 export const AuthorsManager: React.FC = () => {
     const [authors, setAuthors] = useState<Author[]>([]);
@@ -11,7 +12,7 @@ export const AuthorsManager: React.FC = () => {
 
     // Form State
     const [formData, setFormData] = useState({
-        full_name: '',
+        name: '',
         bio: '',
         location: ''
     });
@@ -38,7 +39,7 @@ export const AuthorsManager: React.FC = () => {
 
     const handleCreateClick = () => {
         setEditingAuthor(null);
-        setFormData({ full_name: '', bio: '', location: '' });
+        setFormData({ name: '', bio: '', location: '' });
         setSelectedFile(null);
         setPreviewUrl(null);
         setError(null);
@@ -48,7 +49,7 @@ export const AuthorsManager: React.FC = () => {
     const handleEditClick = (author: Author) => {
         setEditingAuthor(author);
         setFormData({
-            full_name: author.full_name,
+            name: author.name,
             bio: author.bio,
             location: author.location
         });
@@ -72,18 +73,24 @@ export const AuthorsManager: React.FC = () => {
         setError(null);
 
         try {
-            const payload = new FormData();
-            payload.append('full_name', formData.full_name);
-            payload.append('bio', formData.bio);
-            payload.append('location', formData.location);
+            const authorData: AuthorInput = {
+                name: formData.name,
+                bio: formData.bio,
+                location: formData.location
+            };
+
             if (selectedFile) {
-                payload.append('photo', selectedFile);
+                const base64 = await fileToBase64(selectedFile);
+                authorData.photo_base64 = base64;
+                authorData.photo_mime_type = selectedFile.type;
+            } else if (editingAuthor) {
+                authorData.existing_photo_url = editingAuthor.photo_url;
             }
 
             if (editingAuthor) {
-                await updateAuthor(editingAuthor.id, payload);
+                await updateAuthor(editingAuthor.id, authorData);
             } else {
-                await createAuthor(payload);
+                await createAuthor(authorData);
             }
 
             setView('list');
@@ -131,8 +138,8 @@ export const AuthorsManager: React.FC = () => {
                         <input
                             type="text"
                             required
-                            value={formData.full_name}
-                            onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                             placeholder="e.g. Sarah Johnson"
                         />
@@ -233,7 +240,7 @@ export const AuthorsManager: React.FC = () => {
                                     <td className="px-6 py-3">
                                         <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border border-gray-200">
                                             {author.photo_url ? (
-                                                <img src={author.photo_url} alt={author.full_name} className="w-full h-full object-cover" />
+                                                <img src={author.photo_url} alt={author.name} className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-400">
                                                     <User size={20} />
@@ -241,7 +248,7 @@ export const AuthorsManager: React.FC = () => {
                                             )}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-3 font-medium text-gray-900">{author.full_name}</td>
+                                    <td className="px-6 py-3 font-medium text-gray-900">{author.name}</td>
                                     <td className="px-6 py-3 text-gray-500">
                                         <div className="flex items-center gap-1.5">
                                             <MapPin size={14} />

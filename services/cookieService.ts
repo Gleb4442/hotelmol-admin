@@ -1,52 +1,45 @@
 import { CookieConsentParams, CookieConsentResponse } from '../types';
 import { safeApiCall } from '../lib/api';
-import { sql } from '../lib/db';
+import { CONFIG } from '../constants';
 import { CookieConsent } from '../types/database';
 
 export const fetchCookieConsents = async (params: CookieConsentParams): Promise<CookieConsentResponse> => {
   return safeApiCall(async () => {
-    // Pagination
-    const limit = params.pageSize;
-    const offset = (params.page - 1) * params.pageSize;
-    const sortDir = params.sortDir === 'asc' ? sql`ASC` : sql`DESC`;
+    // Construct Query Params
+    const url = new URL(CONFIG.N8N_COOKIE_URL);
+    url.searchParams.append('page', params.page.toString());
+    url.searchParams.append('limit', params.pageSize.toString());
+    if (params.dateFrom) url.searchParams.append('dateFrom', params.dateFrom);
+    if (params.dateTo) url.searchParams.append('dateTo', params.dateTo);
+    url.searchParams.append('sortDir', params.sortDir || 'desc');
 
-    // Construct WHERE clause based on params
-    let whereClause = sql`WHERE true`;
+    const response = await fetch(url.toString(), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${CONFIG.N8N_WEBHOOK_SECRET}`
+      }
+    });
 
-    if (params.dateFrom) {
-      whereClause = sql`${whereClause} AND timestamp >= ${new Date(params.dateFrom).toISOString()}`;
+    if (!response.ok) {
+      console.warn("Cookie Consent Fetch failed");
+      return { items: [], total: 0 };
     }
-    if (params.dateTo) {
-      // Set to end of day
-      const toDate = new Date(params.dateTo);
-      toDate.setHours(23, 59, 59, 999);
-      whereClause = sql`${whereClause} AND timestamp <= ${toDate.toISOString()}`;
-    }
 
-    // 1. Fetch Items
-    const items = await sql`
-        SELECT * FROM cookie_consents 
-        ${whereClause}
-        ORDER BY timestamp ${sortDir}
-        LIMIT ${limit} OFFSET ${offset}
-      `;
+    const data = await response.json();
+    // Expected format: { items: [], total: number } or { consents: [] }
+    const items = data.items || data.consents || [];
 
-    // 2. Fetch Total Count (for pagination)
-    const countResult = await sql`
-        SELECT COUNT(*) FROM cookie_consents ${whereClause}
-      `;
-
-    // Map JSONB fields if necessary (neon http driver sometimes returns string for json)
     const mappedItems: CookieConsent[] = items.map((row: any) => ({
       ...row,
       consent_categories: typeof row.consent_categories === 'string'
         ? JSON.parse(row.consent_categories)
-        : row.consent_categories
+        : (row.consent_categories || {})
     }));
 
     return {
       items: mappedItems,
-      total: Number(countResult[0].count)
+      total: data.total || items.length
     };
   }, 'fetchCookieConsents');
 };

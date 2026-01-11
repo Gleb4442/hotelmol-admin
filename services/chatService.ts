@@ -1,6 +1,6 @@
 import { ChatLog } from '../types/database';
 import { safeApiCall } from '../lib/api';
-import { sql } from '../lib/db';
+import { CONFIG } from '../constants';
 
 export interface ChatSessionPreview {
     session_id: string;
@@ -11,41 +11,64 @@ export interface ChatSessionPreview {
 
 export const fetchChatSessions = async (): Promise<ChatSessionPreview[]> => {
     return safeApiCall(async () => {
-        // Group by session_id to get a list of conversations
-        const rows = await sql`
-      SELECT 
-        session_id,
-        MAX(created_at) as last_message_at,
-        COUNT(*) as message_count,
-        (ARRAY_AGG(user_message ORDER BY created_at DESC))[1] as preview
-      FROM chat_logs
-      GROUP BY session_id
-      ORDER BY last_message_at DESC
-    `;
-        return rows as ChatSessionPreview[];
+        // Fetch from N8N Webhook
+        const response = await fetch(CONFIG.N8N_CHAT_HISTORY_URL + '?type=sessions', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${CONFIG.N8N_WEBHOOK_SECRET}`
+            }
+        });
+
+        if (!response.ok) {
+            console.warn("Chat Sessions Fetch failed");
+            return [];
+        }
+
+        const data = await response.json();
+        return (data.sessions || []) as ChatSessionPreview[];
     }, 'fetchChatSessions');
 };
 
 export const fetchChatLogsBySession = async (sessionId: string): Promise<ChatLog[]> => {
     return safeApiCall(async () => {
-        const rows = await sql`
-      SELECT * FROM chat_logs
-      WHERE session_id = ${sessionId}
-      ORDER BY created_at ASC
-    `;
-        return rows as ChatLog[];
+        const url = new URL(CONFIG.N8N_CHAT_HISTORY_URL);
+        url.searchParams.append('type', 'logs');
+        url.searchParams.append('sessionId', sessionId);
+
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${CONFIG.N8N_WEBHOOK_SECRET}`
+            }
+        });
+
+        if (!response.ok) return [];
+
+        const data = await response.json();
+        return (data.logs || []) as ChatLog[];
     }, 'fetchChatLogsBySession');
 };
 
 export const fetchChatLogsByDateRange = async (dateFrom: string, dateTo: string): Promise<ChatLog[]> => {
     return safeApiCall(async () => {
-        // Basic filter implementation
-        const rows = await sql`
-      SELECT * FROM chat_logs
-      WHERE created_at >= ${dateFrom} AND created_at <= ${dateTo}
-      ORDER BY created_at DESC
-      LIMIT 100
-     `;
-        return rows as ChatLog[];
+        const url = new URL(CONFIG.N8N_CHAT_HISTORY_URL);
+        url.searchParams.append('type', 'logs');
+        url.searchParams.append('from', dateFrom);
+        url.searchParams.append('to', dateTo);
+
+        const response = await fetch(url.toString(), {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${CONFIG.N8N_WEBHOOK_SECRET}`
+            }
+        });
+
+        if (!response.ok) return [];
+
+        const data = await response.json();
+        return (data.logs || []) as ChatLog[];
     }, 'fetchChatLogsByDateRange');
 };

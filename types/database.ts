@@ -49,7 +49,7 @@ export interface CookieConsent {
 
 export interface Author {
   id: number;
-  full_name: string;
+  name: string;
   photo_url: string;
   bio: string;
   location: string;
