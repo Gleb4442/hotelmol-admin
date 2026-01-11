@@ -4,26 +4,34 @@ import { safeApiCall } from '../lib/api';
 export const testN8nConnection = async (): Promise<{ success: boolean; message: string; latency: number }> => {
   return safeApiCall(async () => {
     const start = performance.now();
-    
-    if (!CONFIG.N8N_WEBHOOK_URL.startsWith('http')) {
-      throw new Error("Invalid Webhook URL in environment variables");
+
+    // We test the "Get Blog Data" endpoint as a known GET operation via Proxy
+    // We simply check if we can reach it (even empty list is success)
+    const url = CONFIG.N8N_BLOG_GET_URL; // e.g. /api/n8n/get-blog-data
+
+    // Append a small limit to be lightweight
+    const testUrl = `${url}?limit=1`;
+
+    const response = await fetch(testUrl, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${CONFIG.N8N_WEBHOOK_SECRET}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Proxy Error: ${response.status}`);
     }
 
-    // Ping the webhook (Method: OPTIONS or GET depending on N8N setup, or just simple check)
-    // Since N8N webhooks usually expect POST, we might just validate the URL reachability here
-    // or assume success if URL is present for the diagnostic check.
-    
-    // For production diagnostic, we will just check if we can parse the URL
-    new URL(CONFIG.N8N_WEBHOOK_URL);
-    
-    // Simulate slight delay for UX
-    await new Promise(resolve => setTimeout(resolve, 500));
+    // We don't strictly need to parse JSON to know connection worked, 
+    // but good to verify it's valid JSON coming back.
+    await response.json();
 
     const end = performance.now();
-    return { 
-      success: true, 
-      message: "Webhook Configured (Production Mode)", 
-      latency: Math.round(end - start) 
+    return {
+      success: true,
+      message: "Proxy Active (N8N Reachable)",
+      latency: Math.round(end - start)
     };
   }, 'testN8nConnection');
 };
