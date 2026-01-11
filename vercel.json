@@ -1,0 +1,12 @@
+{
+    "rewrites": [
+        {
+            "source": "/api/n8n/:path*",
+            "destination": "https://n8n.myn8napp.online/webhook/:path*"
+        },
+        {
+            "source": "/(.*)",
+            "destination": "/index.html"
+        }
+    ]
+}
