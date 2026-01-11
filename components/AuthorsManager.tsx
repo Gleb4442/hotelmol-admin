@@ -35,7 +35,7 @@ export const AuthorsManager: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-};
+    };
 
     const handleCreateClick = () => {
         setEditingAuthor(null);
@@ -44,7 +44,7 @@ export const AuthorsManager: React.FC = () => {
         setPreviewUrl(null);
         setError(null);
         setView('form');
-};
+    };
 
     const handleEditClick = (author: Author) => {
         setEditingAuthor(author);
@@ -57,7 +57,7 @@ export const AuthorsManager: React.FC = () => {
         setPreviewUrl(author.photo_url || null);
         setError(null);
         setView('form');
-};
+    };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -65,7 +65,7 @@ export const AuthorsManager: React.FC = () => {
             setSelectedFile(file);
             setPreviewUrl(URL.createObjectURL(file));
         }
-};
+    };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -82,7 +82,6 @@ export const AuthorsManager: React.FC = () => {
             if (selectedFile) {
                 const base64 = await fileToBase64(selectedFile);
                 authorData.photo_base64 = base64;
-                authorData.photo_mime_type = selectedFile.type;
             } else if (editingAuthor) {
                 authorData.existing_photo_url = editingAuthor.photo_url;
             }
@@ -100,7 +99,7 @@ export const AuthorsManager: React.FC = () => {
         } finally {
             setIsSubmitting(false);
         }
-};
+    };
 
     const handleDelete = async (id: number) => {
         if (window.confirm('Are you sure you want to delete this author? This action is irreversible.')) {
@@ -111,10 +110,10 @@ export const AuthorsManager: React.FC = () => {
                 setError(err.message || 'Failed to delete author');
             }
         }
-};
+    };
 
     if (view === 'form') {
-    return (
+        return (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm animate-fade-in-up max-w-2xl mx-auto">
                 <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                     <h3 className="font-semibold text-gray-900">

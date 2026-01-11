@@ -13,20 +13,18 @@ export interface UnifiedBlogOpsPayload {
     author_id: number | null;
     image_file?: string | null; // Base64
     seo_title?: string;
-    seo_description?: string;
-    // Multilingual fields (preserving them as they are likely in DB schema)
-    title_ru?: string;
-    content_ru?: string;
-    title_en?: string;
-    content_en?: string;
-    title_pl?: string;
-    content_pl?: string;
-    seo_title_ru?: string;
-    seo_description_ru?: string;
-    seo_title_en?: string;
-    seo_description_en?: string;
-    seo_title_pl?: string;
-    seo_description_pl?: string;
+    // ... rest of fields
+  };
+}
+
+export interface UnifiedAuthorOpsPayload {
+  action: 'create_author' | 'update_author';
+  author: {
+    id?: number;
+    name: string;
+    bio: string;
+    location: string;
+    image_file?: string | null; // Unified key (formerly photo_base64)
   };
 }
 
@@ -60,6 +58,33 @@ export async function sendBlogOpsN8N(payload: UnifiedBlogOpsPayload) {
 
     return await response.json();
   }, 'sendBlogOpsN8N');
+}
+
+/**
+ * Send data to N8N Author Operations Webhook
+ */
+export async function sendAuthorOpsN8N(payload: UnifiedAuthorOpsPayload) {
+  return safeApiCall(async () => {
+    if (!CONFIG.N8N_BLOG_OPS_URL) throw new Error("Missing N8N_BLOG_OPS_URL");
+
+    Logger.info("Initiating Author Ops N8N Call", { url: CONFIG.N8N_BLOG_OPS_URL, action: payload.action });
+
+    const response = await fetch(CONFIG.N8N_BLOG_OPS_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${CONFIG.N8N_WEBHOOK_SECRET}`,
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`N8N Author Error: ${response.status} ${errorText}`);
+    }
+
+    return await response.json();
+  }, 'sendAuthorOpsN8N');
 }
 
 /**
