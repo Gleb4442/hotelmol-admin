@@ -146,7 +146,6 @@ export const ChatHistory: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {/* AI Response */}
                                         <div className="flex gap-4">
                                             <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 text-green-700">
                                                 <UserCog size={16} />
@@ -155,6 +154,14 @@ export const ChatHistory: React.FC = () => {
                                                 <div className="bg-white border border-gray-200 text-gray-800 px-4 py-3 rounded-2xl rounded-tl-sm text-sm shadow-sm whitespace-pre-wrap">
                                                     {log.ai_response}
                                                 </div>
+                                                {/* Metadata Badge */}
+                                                {(log.model || log.token_usage) && (
+                                                    <div className="flex gap-2 mt-1 px-2 py-0.5 bg-gray-50 border border-gray-100 rounded text-[10px] text-gray-400">
+                                                        {log.model && <span>Model: {log.model}</span>}
+                                                        {log.token_usage && <span>Tokens: {log.token_usage}</span>}
+                                                        {log.status === 'error' && <span className="text-red-500">Error: {log.error_message}</span>}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
                                     </div>

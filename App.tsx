@@ -68,7 +68,7 @@ const SchemaViewer: React.FC = () => {
 
   const tables: { name: TableName; label: string; description: string; mockData: any[] }[] = [
     { name: 'demo_requests', label: 'Demo Requests', description: 'Inbound requests for product demos', mockData: MOCK_DEMO_REQUESTS },
-    { name: 'contact_submissions', label: 'Contact Submissions', description: 'General contact form entries', mockData: MOCK_CONTACTS },
+    { name: 'contact_forms', label: 'Contact Forms', description: 'General contact form entries', mockData: MOCK_CONTACTS },
     { name: 'roi_calculations', label: 'ROI Calculations', description: 'Stored results from ROI calculator widget', mockData: MOCK_ROI_CALCULATIONS },
     { name: 'cookie_consents', label: 'Cookie Consents', description: 'GDPR/Privacy consent logs', mockData: MOCK_COOKIE_CONSENTS },
     { name: 'blog_posts', label: 'Blog Posts', description: 'Content management for the blog', mockData: MOCK_BLOG_POSTS_FULL },
@@ -869,8 +869,9 @@ const App: React.FC = () => {
                 <div className="bg-slate-900 text-slate-50 p-4 rounded-lg font-mono text-sm overflow-x-auto">
                   <p className="text-gray-400 mb-2"># .env.local (Root Directory)</p>
                   <p><span className="text-purple-400">DATABASE_URL</span>="{CONFIG.DATABASE_URL}"</p>
-                  <p><span className="text-purple-400">N8N_WEBHOOK_URL</span>="{CONFIG.N8N_WEBHOOK_URL}"</p>
-                  <p><span className="text-purple-400">N8N_WEBHOOK_SECRET</span>="{CONFIG.N8N_WEBHOOK_SECRET}"</p>
+                  <p><span className="text-purple-400">VITE_N8N_PUBLISH_WEBHOOK_URL</span>="{CONFIG.N8N_BLOG_OPS_URL}"</p>
+                  <p><span className="text-purple-400">VITE_N8N_GET_DATA_WEBHOOK_URL</span>="{CONFIG.N8N_BLOG_GET_URL}"</p>
+                  <p><span className="text-purple-400">VITE_N8N_WEBHOOK_SECRET</span>="{CONFIG.N8N_WEBHOOK_SECRET}"</p>
                 </div>
                 <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
                   <strong>Important:</strong> Ensure these variables are added to your Vercel Project Settings under the "Environment Variables" tab for production deployment.

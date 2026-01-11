@@ -107,6 +107,7 @@ export const ServicesManager: React.FC = () => {
                                 <tr>
                                     <th className="px-6 py-3 w-16">ID</th>
                                     <th className="px-6 py-3">Title</th>
+                                    <th className="px-6 py-3 w-32">Category</th>
                                     <th className="px-6 py-3 w-32">Price</th>
                                     <th className="px-6 py-3">Description</th>
                                     <th className="px-6 py-3 w-32 text-right">Actions</th>
@@ -117,6 +118,11 @@ export const ServicesManager: React.FC = () => {
                                     <tr key={service.id} className="hover:bg-gray-50 group">
                                         <td className="px-6 py-4 text-gray-500 font-mono text-xs">{service.id}</td>
                                         <td className="px-6 py-4 font-medium text-gray-900">{service.title}</td>
+                                        <td className="px-6 py-4">
+                                            <span className="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded">
+                                                {(service as any).category || 'General'}
+                                            </span>
+                                        </td>
                                         <td className="px-6 py-4 text-gray-600">{service.price}</td>
                                         <td className="px-6 py-4 text-gray-500 truncate max-w-xs" title={service.description}>
                                             {service.description}
@@ -178,16 +184,28 @@ export const ServicesManager: React.FC = () => {
                                     placeholder="e.g. Standard Room Cleaning"
                                 />
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
-                                <input
-                                    type="text"
-                                    required
-                                    value={currentService.price || ''}
-                                    onChange={e => setCurrentService(p => ({ ...p, price: e.target.value }))}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    placeholder="e.g. $50 or 'Custom'"
-                                />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={currentService.price || ''}
+                                        onChange={e => setCurrentService(p => ({ ...p, price: e.target.value }))}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="e.g. $50"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                                    <input
+                                        type="text"
+                                        value={(currentService as any).category || ''}
+                                        onChange={e => setCurrentService(p => ({ ...p, category: e.target.value } as any))}
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="e.g. Rooms, Cleaning"
+                                    />
+                                </div>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Description (AI Knowledge)</label>

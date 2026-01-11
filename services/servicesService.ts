@@ -33,7 +33,7 @@ export const createService = async (data: Partial<Service>): Promise<Service> =>
             },
             body: JSON.stringify({
                 action: 'create',
-                service: data
+                service: { ...data, category: (data as any).category }
             })
         });
         const json = await response.json();
@@ -51,7 +51,7 @@ export const updateService = async (id: number, data: Partial<Service>): Promise
             },
             body: JSON.stringify({
                 action: 'update',
-                service: { ...data, id }
+                service: { ...data, id, category: (data as any).category }
             })
         });
         const json = await response.json();

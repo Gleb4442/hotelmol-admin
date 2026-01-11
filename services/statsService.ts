@@ -16,15 +16,15 @@ export const fetchDashboardStats = async (): Promise<DashboardStats> => {
     try {
       // Parallelize queries for performance
       const [leadsCount, blogCount, cookieCount] = await Promise.all([
-        // Combine counts from 3 tables: demo_requests, contact_submissions, roi_calculations
+        // Combine counts from 3 tables: demo_requests, contact_forms, roi_calculations
         sql`
           SELECT 
             (SELECT COUNT(*) FROM demo_requests) +
-            (SELECT COUNT(*) FROM contact_submissions) +
+            (SELECT COUNT(*) FROM contact_forms) +
             (SELECT COUNT(*) FROM roi_calculations) as total_leads,
             
             (SELECT COUNT(*) FROM demo_requests WHERE created_at > NOW() - INTERVAL '24 hours') +
-            (SELECT COUNT(*) FROM contact_submissions WHERE created_at > NOW() - INTERVAL '24 hours') +
+            (SELECT COUNT(*) FROM contact_forms WHERE created_at > NOW() - INTERVAL '24 hours') +
             (SELECT COUNT(*) FROM roi_calculations WHERE created_at > NOW() - INTERVAL '24 hours') as new_leads
         `,
         sql`SELECT COUNT(*) FROM blog_posts WHERE status = 'published'`,
@@ -59,7 +59,7 @@ export const fetchLeadsByDay = async (): Promise<DailyLeadCount[]> => {
         GROUP BY date
         ORDER BY date ASC
       `;
-      
+
       return result.map((r: any) => ({ date: r.date, count: Number(r.count) }));
     } catch (e) {
       return [];
@@ -74,7 +74,7 @@ export const fetchLatestLeads = async (): Promise<UnifiedLead[]> => {
       const result = await sql`
         (SELECT id, 'demo' as source, name, hotel_name as detail, created_at FROM demo_requests)
         UNION ALL
-        (SELECT id, 'contact' as source, name, message as detail, created_at FROM contact_submissions)
+        (SELECT id, 'contact' as source, name, message as detail, created_at FROM contact_forms)
         UNION ALL
         (SELECT id, 'roi' as source, name, 'ROI Calculated' as detail, created_at FROM roi_calculations)
         ORDER BY created_at DESC

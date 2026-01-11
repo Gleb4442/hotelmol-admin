@@ -1,4 +1,4 @@
-import { BlogPost, ContactSubmission, DemoRequest, RoiCalculation, CookieConsent, Service, ChatLog } from "./types/database";
+import { BlogPost, ContactForm, DemoRequest, RoiCalculation, CookieConsent, Service, ChatLog } from "./types/database";
 import { Post } from "./types";
 
 /**
@@ -27,11 +27,11 @@ export const CONFIG = {
   // @ts-ignore
   DATABASE_URL: getEnv('VITE_DATABASE_URL', true),
   // @ts-ignore
-  N8N_BLOG_OPS_URL: getEnv('VITE_N8N_BLOG_OPS_URL') || 'https://n8n.myn8napp.online/webhook/blog-operations',
+  N8N_BLOG_OPS_URL: getEnv('VITE_N8N_PUBLISH_WEBHOOK_URL') || 'https://n8n.myn8napp.online/webhook/blog/write',
   // @ts-ignore
-  N8N_BLOG_GET_URL: getEnv('VITE_N8N_BLOG_GET_URL') || 'https://n8n.myn8napp.online/webhook/get-blog-data',
+  N8N_BLOG_GET_URL: getEnv('VITE_N8N_GET_DATA_WEBHOOK_URL') || 'https://n8n.myn8napp.online/webhook/get-blog-data',
   // @ts-ignore
-  N8N_DELETE_ITEM_URL: getEnv('VITE_N8N_DELETE_ITEM_URL') || 'https://n8n.myn8napp.online/webhook/delete-item',
+  N8N_DELETE_ITEM_URL: getEnv('VITE_N8N_DELETE_WEBHOOK_URL') || 'https://n8n.myn8napp.online/webhook/delete-item',
 
   // @ts-ignore
   N8N_CHAT_URL: getEnv('VITE_N8N_CHAT_URL') || 'https://n8n.myn8napp.online/webhook/chat',
@@ -49,7 +49,7 @@ export const CONFIG = {
   N8N_COOKIE_URL: getEnv('VITE_N8N_COOKIE_URL') || 'https://n8n.myn8napp.online/webhook/cookie-consent', // Reference
 
   // @ts-ignore
-  N8N_WEBHOOK_SECRET: getEnv('VITE_N8N_WEBHOOK_SECRET') || 'adminblogwedhooksecret556',
+  N8N_WEBHOOK_SECRET: getEnv('VITE_N8N_WEBHOOK_SECRET') || 'adminblogwebhooksecret556',
 
 
   // @ts-ignore
@@ -73,7 +73,7 @@ export const MOCK_DEMO_REQUESTS: DemoRequest[] = [
   { id: 1, name: 'Example User', email: 'user@example.com', hotel_name: 'Demo Hotel', data_processing_consent: true, marketing_consent: true, created_at: getDate(0, 1), updated_at: getDate(0, 1) },
 ];
 
-export const MOCK_CONTACTS: ContactSubmission[] = [
+export const MOCK_CONTACTS: ContactForm[] = [
   { id: 1, name: 'Contact Lead', email: 'contact@example.com', phone: '123456', position: 'Manager', hotel_name: 'Test Hotel', message: 'Hello', data_processing_consent: true, marketing_consent: true, created_at: getDate(0, 5), updated_at: getDate(0, 5) },
 ];
 

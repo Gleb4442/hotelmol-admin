@@ -9,7 +9,7 @@ export interface DemoRequest {
   updated_at: string;
 }
 
-export interface ContactSubmission {
+export interface ContactForm {
   id: number;
   name: string;
   email: string;
@@ -17,6 +17,9 @@ export interface ContactSubmission {
   position: string;
   hotel_name: string;
   message: string;
+  company?: string;
+  integration_type?: string;
+  responded_at?: string;
   data_processing_consent: boolean;
   marketing_consent: boolean;
   created_at: string;
@@ -58,6 +61,7 @@ export interface Author {
 
 export interface BlogPost {
   id: number;
+  image_url?: string;
   // Контент (украинский - основной)
   title: string;
   slug: string;
@@ -89,7 +93,7 @@ export interface BlogPost {
   updated_at: string;
 }
 
-export type TableName = 'demo_requests' | 'contact_submissions' | 'roi_calculations' | 'cookie_consents' | 'blog_posts' | 'services' | 'chat_logs';
+export type TableName = 'demo_requests' | 'contact_forms' | 'roi_calculations' | 'cookie_consents' | 'blog_posts' | 'services' | 'chat_logs' | 'knowledge_base';
 
 export interface Service {
   id: number;
@@ -105,5 +109,21 @@ export interface ChatLog {
   session_id: string;
   user_message: string;
   ai_response: string;
+  token_usage?: number;
+  model?: string;
+  temperature?: number;
+  max_tokens?: number;
+  status?: string;
+  error_message?: string;
+  created_at: string;
+}
+
+export interface KnowledgeBaseItem {
+  id: number;
+  title: string;
+  category?: string;
+  content?: string; // Assuming 'description' holds content or is embedded
+  description?: string; // Keeping description as per 'Service' but typically KB has 'content'
+  embedding?: number[];
   created_at: string;
 }

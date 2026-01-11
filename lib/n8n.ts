@@ -31,8 +31,8 @@ export interface UnifiedBlogOpsPayload {
 }
 
 export interface DeleteItemPayload {
-  type: 'post' | 'author';
-  id: string | number;
+  type: 'post' | 'author' | 'service' | 'knowledge_base';
+  id: number | string;
 }
 
 /**

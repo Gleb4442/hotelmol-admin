@@ -78,54 +78,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
 
   const [rawTags, setRawTags] = useState('');
   const [authors, setAuthors] = useState<Author[]>([]);
-  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
-  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
 
-  // Custom handler for Quill image button
-  const imageHandler = () => {
-    const input = document.createElement('input');
-    input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/*');
-    input.click();
-
-    input.onchange = async () => {
-      if (input.files && input.files[0]) {
-        const file = input.files[0];
-        const image_base64 = await toBase64(file);
-
-        try {
-          const res = await sendToN8n({
-            action: "upload_content_image",
-            post: { image_base64 }
-          });
-
-          if (res.url) {
-            const quill = quillRef.current.getEditor();
-            const range = quill.getSelection(true);
-            quill.insertEmbed(range.index, 'image', res.url);
-          }
-        } catch (err) {
-          console.error("Image upload failed", err);
-          setError("Image upload failed.");
-        }
-      }
-    };
-  };
-
-  const modules = {
-    toolbar: {
-      container: [
-        [{ 'header': [1, 2, 3, false] }],
-        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
-        ['link', 'image'],
-        ['clean']
-      ],
-      handlers: {
-        image: imageHandler,
-      },
-    },
-  };
 
   useEffect(() => {
     fetchAuthors().then(data => setAuthors(data)).catch(console.error);
