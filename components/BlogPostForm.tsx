@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Save, X, Send, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
 import { sendBlogOpsN8N, UnifiedBlogOpsPayload, fileToBase64 } from '../lib/n8n';
 import { fetchAuthors } from '../services/authorsService';
 import { BlogPost, Author } from '../types/database';
+import { toBase64 } from '../lib/utils';
 
 interface BlogPostFormProps {
   initialData?: BlogPost; // If present, we are in EDIT mode
@@ -43,6 +44,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+
   // State for active tab
   const [activeTab, setActiveTab] = useState<'ua' | 'ru' | 'en' | 'pl'>('ua');
 
@@ -76,6 +78,54 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
 
   const [rawTags, setRawTags] = useState('');
   const [authors, setAuthors] = useState<Author[]>([]);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
+
+  // Custom handler for Quill image button
+  const imageHandler = () => {
+    const input = document.createElement('input');
+    input.setAttribute('type', 'file');
+    input.setAttribute('accept', 'image/*');
+    input.click();
+
+    input.onchange = async () => {
+      if (input.files && input.files[0]) {
+        const file = input.files[0];
+        const image_base64 = await toBase64(file);
+
+        try {
+          const res = await sendToN8n({
+            action: "upload_content_image",
+            post: { image_base64 }
+          });
+
+          if (res.url) {
+            const quill = quillRef.current.getEditor();
+            const range = quill.getSelection(true);
+            quill.insertEmbed(range.index, 'image', res.url);
+          }
+        } catch (err) {
+          console.error("Image upload failed", err);
+          setError("Image upload failed.");
+        }
+      }
+    };
+  };
+
+  const modules = {
+    toolbar: {
+      container: [
+        [{ 'header': [1, 2, 3, false] }],
+        ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+        [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+        ['link', 'image'],
+        ['clean']
+      ],
+      handlers: {
+        image: imageHandler,
+      },
+    },
+  };
 
   useEffect(() => {
     fetchAuthors().then(data => setAuthors(data)).catch(console.error);
@@ -112,6 +162,9 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
         featured_image: initialData.featured_image || '',
       });
       setRawTags(initialData.tags?.join(', ') || '');
+      if (initialData.featured_image) {
+        setCoverImagePreview(initialData.featured_image);
+      }
     }
   }, [initialData]);
 
@@ -207,15 +260,20 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
       </div>
     );
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
 
     try {
+      let featured_image_base64 = '';
+      if (coverImageFile) {
+        featured_image_base64 = await toBase64(coverImageFile);
+      }
+
       // Process tags
       const processedTags = rawTags.split(',').map(t => t.trim()).filter(Boolean);
+
 
       const payload: UnifiedBlogOpsPayload = {
         action: isEditMode ? 'update' : 'create',
@@ -229,7 +287,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
           // Taxonomy (mapped to string/array or kept as is if spec allows?)
           // V2 Spec didn't explicitly show category/tags in post object example, but they are crucial.
           // I will assume they are part of 'post' object or handled via internal logic.
-          // Spec: "post": { ... }
+          // Spec: "post": {...}
           // I'll keep them.
           // category: formData.category,
           // tags: processedTags,
@@ -348,6 +406,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                     onChange={(val) => setFormData({ ...formData, content: val })}
                     placeholder="Write your article here..."
                   />
+                  />
                 </div>
                 {/* SEO для украинского */}
                 <div className="border-t border-gray-200 pt-6">
@@ -410,6 +469,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                     value={formData.content_ru}
                     onChange={(val) => setFormData({ ...formData, content_ru: val })}
                     placeholder="Оставьте пустым, если нет перевода"
+                  />
                   />
                 </div>
                 {/* SEO для русского */}
@@ -474,6 +534,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                     value={formData.content_en}
                     onChange={(val) => setFormData({ ...formData, content_en: val })}
                     placeholder="Leave empty if no translation"
+                  />
                   />
                 </div>
                 {/* SEO для английского */}
@@ -540,7 +601,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
                   />
                 </div>
                 {/* SEO для польского */}
-                <div className="border-t border-gray-200 pt-6">
+                <div className="border-t border-gray-200 pt-6" >
                   <h3 className="text-lg font-semibold mb-4">SEO Configuration (PL)</h3>
                   <div className="space-y-4">
                     <div>
@@ -579,10 +640,12 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
         </div>
 
         {/* Right Column: Metadata */}
-        <div className="space-y-6">
+        <div className="space-y-6" >
+
+
 
           {/* Publish Actions */}
-          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200">
+          <div className="bg-gray-50 p-4 rounded-lg border border-gray-200" >
             <h4 className="text-sm font-medium text-gray-900 mb-3">Publishing</h4>
             <div className="space-y-3">
               <select
@@ -613,7 +676,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
           </div>
 
           {/* Featured Image */}
-          <div className="p-4 border border-gray-200 rounded-lg">
+          <div className="p-4 border border-gray-200 rounded-lg" >
             <h4 className="text-sm font-medium text-gray-900 mb-3">Featured Image</h4>
             <div className="space-y-3">
               {formData.featured_image ? (
@@ -647,7 +710,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
           </div>
 
           {/* Taxonomy */}
-          <div className="p-4 border border-gray-200 rounded-lg">
+          <div className="p-4 border border-gray-200 rounded-lg" >
             <h4 className="text-sm font-medium text-gray-900 mb-3">Organization</h4>
             <div className="space-y-4">
               <div>
@@ -679,7 +742,7 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
           </div>
 
           {/* Author */}
-          <div className="p-4 border border-gray-200 rounded-lg">
+          <div className="p-4 border border-gray-200 rounded-lg" >
             <h4 className="text-sm font-medium text-gray-900 mb-3">Attribution</h4>
             <div>
               <label className="block text-xs text-gray-500 mb-1">Author</label>

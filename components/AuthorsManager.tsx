@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, User, Loader2, Save, X, MapPin } from 'lucide-react';
+import { Plus, Edit2, User, Loader2, Save, X, MapPin, Trash2 } from 'lucide-react';
 import { Author } from '../types/database';
-import { fetchAuthors, createAuthor, updateAuthor, AuthorInput } from '../services/authorsService';
+import { fetchAuthors, createAuthor, updateAuthor, deleteAuthor, AuthorInput } from '../services/authorsService';
 import { fileToBase64 } from '../lib/n8n';
 
 export const AuthorsManager: React.FC = () => {
@@ -35,7 +35,7 @@ export const AuthorsManager: React.FC = () => {
         } finally {
             setIsLoading(false);
         }
-    };
+};
 
     const handleCreateClick = () => {
         setEditingAuthor(null);
@@ -44,7 +44,7 @@ export const AuthorsManager: React.FC = () => {
         setPreviewUrl(null);
         setError(null);
         setView('form');
-    };
+};
 
     const handleEditClick = (author: Author) => {
         setEditingAuthor(author);
@@ -57,7 +57,7 @@ export const AuthorsManager: React.FC = () => {
         setPreviewUrl(author.photo_url || null);
         setError(null);
         setView('form');
-    };
+};
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -65,7 +65,7 @@ export const AuthorsManager: React.FC = () => {
             setSelectedFile(file);
             setPreviewUrl(URL.createObjectURL(file));
         }
-    };
+};
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -100,10 +100,21 @@ export const AuthorsManager: React.FC = () => {
         } finally {
             setIsSubmitting(false);
         }
-    };
+};
+
+    const handleDelete = async (id: number) => {
+        if (window.confirm('Are you sure you want to delete this author? This action is irreversible.')) {
+            try {
+                await deleteAuthor(id);
+                loadAuthors(); // Refresh the list
+            } catch (err: any) {
+                setError(err.message || 'Failed to delete author');
+            }
+        }
+};
 
     if (view === 'form') {
-        return (
+    return (
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm animate-fade-in-up max-w-2xl mx-auto">
                 <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
                     <h3 className="font-semibold text-gray-900">
@@ -259,13 +270,22 @@ export const AuthorsManager: React.FC = () => {
                                         {author.bio}
                                     </td>
                                     <td className="px-6 py-3 text-right">
-                                        <button
-                                            onClick={() => handleEditClick(author)}
-                                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                            title="Edit Author"
-                                        >
-                                            <Edit2 size={16} />
-                                        </button>
+                                        <div className="flex items-center justify-end">
+                                            <button
+                                                onClick={() => handleEditClick(author)}
+                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                title="Edit Author"
+                                            >
+                                                <Edit2 size={16} />
+                                            </button>
+                                            <button
+                                                onClick={() => handleDelete(author.id)}
+                                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                title="Delete Author"
+                                            >
+                                                <Trash2 size={16} />
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             ))}
