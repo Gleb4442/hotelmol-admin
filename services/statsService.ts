@@ -72,11 +72,11 @@ export const fetchLatestLeads = async (): Promise<UnifiedLead[]> => {
     try {
       // Union Query to get latest activity
       const result = await sql`
-        (SELECT id, 'demo' as source, name, hotel_name as detail, created_at FROM demo_requests)
+        (SELECT id, 'demo' as source, name, hotel_name as detail, hotel_name as company, NULL as integration_type, created_at FROM demo_requests)
         UNION ALL
-        (SELECT id, 'contact' as source, name, message as detail, created_at FROM contact_forms)
+        (SELECT id, 'contact' as source, name, message as detail, company, integration_type, created_at FROM contact_forms)
         UNION ALL
-        (SELECT id, 'roi' as source, name, 'ROI Calculated' as detail, created_at FROM roi_calculations)
+        (SELECT id, 'roi' as source, name, 'ROI Calculated' as detail, NULL as company, NULL as integration_type, created_at FROM roi_calculations)
         ORDER BY created_at DESC
         LIMIT 5
       `;

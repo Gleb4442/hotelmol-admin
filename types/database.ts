@@ -76,7 +76,7 @@ export interface BlogPost {
   updated_at: string;
 }
 
-export type TableName = 'demo_requests' | 'contact_forms' | 'roi_calculations' | 'cookie_consents' | 'blog_posts' | 'services' | 'chat_logs' | 'knowledge_base';
+export type TableName = 'demo_requests' | 'contact_forms' | 'roi_calculations' | 'cookie_consents' | 'blog_posts' | 'services' | 'chat_logs' | 'knowledge_base' | 'authors';
 
 export interface Service {
   id: number;

@@ -72,6 +72,9 @@ const SchemaViewer: React.FC = () => {
     { name: 'roi_calculations', label: 'ROI Calculations', description: 'Stored results from ROI calculator widget', mockData: MOCK_ROI_CALCULATIONS },
     { name: 'cookie_consents', label: 'Cookie Consents', description: 'GDPR/Privacy consent logs', mockData: MOCK_COOKIE_CONSENTS },
     { name: 'blog_posts', label: 'Blog Posts', description: 'Content management for the blog', mockData: MOCK_BLOG_POSTS_FULL },
+    { name: 'chat_logs', label: 'Chat Logs', description: 'Full history of AI-user interactions', mockData: [] },
+    { name: 'services', label: 'Services', description: 'Knowledge base for AI training', mockData: [] },
+    { name: 'authors', label: 'Authors', description: 'Blog content creators', mockData: [] },
   ];
 
   const currentTable = tables.find(t => t.name === activeTable)!;
@@ -713,20 +716,30 @@ const App: React.FC = () => {
                         <div key={`${lead.source}-${lead.id}`} className="px-6 py-4 hover:bg-gray-50 transition-colors">
                           <div className="flex items-start justify-between">
                             <div className="flex items-center space-x-3">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${lead.source === 'demo' ? 'bg-blue-100 text-blue-700' :
+                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${lead.source === 'demo' ? 'bg-blue-100 text-blue-700' :
                                 lead.source === 'roi' ? 'bg-green-100 text-green-700' :
                                   'bg-purple-100 text-purple-700'
                                 }`}>
-                                {lead.source === 'demo' ? 'D' : lead.source === 'roi' ? 'R' : 'C'}
+                                {lead.source === 'demo' ? 'DEMO' : lead.source === 'roi' ? 'ROI' : 'MSG'}
                               </div>
-                              <div>
-                                <p className="text-sm font-medium text-gray-900">{lead.name}</p>
-                                <p className="text-xs text-gray-500 truncate max-w-[140px]">{lead.detail}</p>
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="text-sm font-semibold text-gray-900 truncate">{lead.name}</p>
+                                  {lead.integration_type && (
+                                    <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 uppercase font-bold tracking-tight">
+                                      {lead.integration_type}
+                                    </span>
+                                  )}
+                                </div>
+                                {lead.company && <p className="text-xs text-blue-600 font-medium truncate">{lead.company}</p>}
+                                <p className="text-xs text-gray-500 truncate opacity-70 italic mt-0.5" title={lead.detail}>
+                                  "{lead.detail}"
+                                </p>
                               </div>
                             </div>
-                            <div className="flex flex-col items-end">
-                              {lead.is_new && <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 rounded mb-1">NEW</span>}
-                              <span className="text-xs text-gray-400">{new Date(lead.created_at).toLocaleDateString()}</span>
+                            <div className="flex flex-col items-end shrink-0 ml-2">
+                              {lead.is_new && <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 rounded mb-1 ring-1 ring-green-200">NEW</span>}
+                              <span className="text-[10px] text-gray-400 font-mono">{new Date(lead.created_at).toLocaleDateString()}</span>
                             </div>
                           </div>
                         </div>

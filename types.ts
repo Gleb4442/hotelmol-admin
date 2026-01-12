@@ -32,6 +32,8 @@ export interface UnifiedLead {
   source: 'demo' | 'contact' | 'roi';
   name: string;
   detail: string;
+  company?: string;
+  integration_type?: string;
   created_at: string;
   is_new?: boolean;
 }
