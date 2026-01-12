@@ -27,12 +27,13 @@ export const CONFIG = {
   // @ts-ignore
   DATABASE_URL: getEnv('VITE_DATABASE_URL', true),
   // N8N URLs - Always use relative paths to trigger Proxy (Vite/Vercel)
+  // Spec: https://n8n.myn8napp.online/webhook/blog-get-data etc.
   // @ts-ignore
-  N8N_BLOG_OPS_URL: '/api/n8n/blog/write',
+  N8N_BLOG_OPS_URL: '/api/n8n/blog-write-ops',
   // @ts-ignore
-  N8N_BLOG_GET_URL: '/api/n8n/get-blog-data',
+  N8N_BLOG_GET_URL: '/api/n8n/blog-get-data',
   // @ts-ignore
-  N8N_DELETE_ITEM_URL: '/api/n8n/delete-item',
+  N8N_DELETE_ITEM_URL: '/api/n8n/blog-delete',
 
   // @ts-ignore
   N8N_CHAT_URL: '/api/n8n/chat',

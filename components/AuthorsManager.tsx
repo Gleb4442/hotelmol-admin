@@ -1,8 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, User, Loader2, Save, X, MapPin, Trash2 } from 'lucide-react';
+import { Plus, Edit2, User, Loader2, Save, X, Mail, Trash2 } from 'lucide-react';
 import { Author } from '../types/database';
 import { fetchAuthors, createAuthor, updateAuthor, deleteAuthor, AuthorInput } from '../services/authorsService';
 import { fileToBase64 } from '../lib/n8n';
+
+// Email validation regex
+const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+};
 
 export const AuthorsManager: React.FC = () => {
     const [authors, setAuthors] = useState<Author[]>([]);
@@ -10,11 +16,11 @@ export const AuthorsManager: React.FC = () => {
     const [view, setView] = useState<'list' | 'form'>('list');
     const [editingAuthor, setEditingAuthor] = useState<Author | null>(null);
 
-    // Form State
+    // Form State - updated to include email (required per spec)
     const [formData, setFormData] = useState({
         name: '',
-        bio: '',
-        location: ''
+        email: '',
+        bio: ''
     });
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -39,7 +45,7 @@ export const AuthorsManager: React.FC = () => {
 
     const handleCreateClick = () => {
         setEditingAuthor(null);
-        setFormData({ name: '', bio: '', location: '' });
+        setFormData({ name: '', email: '', bio: '' });
         setSelectedFile(null);
         setPreviewUrl(null);
         setError(null);
@@ -50,11 +56,11 @@ export const AuthorsManager: React.FC = () => {
         setEditingAuthor(author);
         setFormData({
             name: author.name,
-            bio: author.bio,
-            location: author.location
+            email: author.email || '',
+            bio: author.bio || ''
         });
         setSelectedFile(null);
-        setPreviewUrl(author.photo_url || null);
+        setPreviewUrl(author.avatar_url || null);
         setError(null);
         setView('form');
     };
@@ -72,18 +78,25 @@ export const AuthorsManager: React.FC = () => {
         setIsSubmitting(true);
         setError(null);
 
+        // Validate email
+        if (!formData.email || !validateEmail(formData.email)) {
+            setError('Please enter a valid email address');
+            setIsSubmitting(false);
+            return;
+        }
+
         try {
             const authorData: AuthorInput = {
                 name: formData.name,
-                bio: formData.bio,
-                location: formData.location
+                email: formData.email,
+                bio: formData.bio || undefined
             };
 
             if (selectedFile) {
-                const base64 = await fileToBase64(selectedFile);
-                authorData.photo_base64 = base64;
-            } else if (editingAuthor) {
-                authorData.existing_photo_url = editingAuthor.photo_url;
+                const dataUrl = await fileToBase64(selectedFile);
+                authorData.avatar_url = dataUrl;
+            } else if (editingAuthor?.avatar_url) {
+                authorData.avatar_url = editingAuthor.avatar_url;
             }
 
             if (editingAuthor) {
@@ -144,7 +157,7 @@ export const AuthorsManager: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
                         <input
                             type="text"
                             required
@@ -156,16 +169,23 @@ export const AuthorsManager: React.FC = () => {
                     </div>
 
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Location (Geo-SEO)</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
                         <div className="relative">
-                            <MapPin className="absolute left-3 top-2.5 text-gray-400" size={16} />
+                            <Mail className="absolute left-3 top-2.5 text-gray-400" size={16} />
                             <input
-                                type="text"
-                                maxLength={100}
-                                value={formData.location}
-                                onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                                type="email"
+                                required
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                onBlur={(e) => {
+                                    if (e.target.value && !validateEmail(e.target.value)) {
+                                        setError('Invalid email format');
+                                    } else {
+                                        setError(null);
+                                    }
+                                }}
                                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                                placeholder="e.g. New York, USA"
+                                placeholder="e.g. author@example.com"
                             />
                         </div>
                     </div>
@@ -173,12 +193,11 @@ export const AuthorsManager: React.FC = () => {
                     <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
                         <textarea
-                            required
                             rows={4}
                             value={formData.bio}
                             onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                            placeholder="Short biography..."
+                            placeholder="Short biography (optional)..."
                         />
                     </div>
 
@@ -239,7 +258,7 @@ export const AuthorsManager: React.FC = () => {
                             <tr>
                                 <th className="px-6 py-3 w-16">Avatar</th>
                                 <th className="px-6 py-3">Name</th>
-                                <th className="px-6 py-3">Location</th>
+                                <th className="px-6 py-3">Email</th>
                                 <th className="px-6 py-3">Bio</th>
                                 <th className="px-6 py-3 text-right">Actions</th>
                             </tr>
@@ -249,8 +268,8 @@ export const AuthorsManager: React.FC = () => {
                                 <tr key={author.id} className="hover:bg-gray-50 transition-colors group">
                                     <td className="px-6 py-3">
                                         <div className="w-10 h-10 rounded-full bg-gray-200 overflow-hidden border border-gray-200">
-                                            {author.photo_url ? (
-                                                <img src={author.photo_url} alt={author.name} className="w-full h-full object-cover" />
+                                            {author.avatar_url ? (
+                                                <img src={author.avatar_url} alt={author.name} className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full flex items-center justify-center text-gray-400">
                                                     <User size={20} />
@@ -261,12 +280,12 @@ export const AuthorsManager: React.FC = () => {
                                     <td className="px-6 py-3 font-medium text-gray-900">{author.name}</td>
                                     <td className="px-6 py-3 text-gray-500">
                                         <div className="flex items-center gap-1.5">
-                                            <MapPin size={14} />
-                                            {author.location}
+                                            <Mail size={14} />
+                                            {author.email}
                                         </div>
                                     </td>
-                                    <td className="px-6 py-3 text-gray-500 max-w-xs truncate" title={author.bio}>
-                                        {author.bio}
+                                    <td className="px-6 py-3 text-gray-500 max-w-xs truncate" title={author.bio || ''}>
+                                        {author.bio || '-'}
                                     </td>
                                     <td className="px-6 py-3 text-right">
                                         <div className="flex items-center justify-end">

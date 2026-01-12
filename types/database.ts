@@ -53,42 +53,25 @@ export interface CookieConsent {
 export interface Author {
   id: number;
   name: string;
-  photo_url: string;
-  bio: string;
-  location: string;
+  email: string;              // Required per N8N spec
+  bio: string | null;
+  avatar_url: string | null;  // Renamed from photo_url per spec
+  posts_count?: number;       // Computed when joined
   created_at?: string;
 }
 
 export interface BlogPost {
   id: number;
-  image_url?: string;
-  // Контент (украинский - основной)
   title: string;
   slug: string;
   content: string;
-  // Переводы контента
-  title_ru?: string;
-  content_ru?: string;
-  title_en?: string;
-  content_en?: string;
-  title_pl?: string;
-  content_pl?: string;
-  // SEO метаданные
-  seo_title?: string; // UA (основной)
-  seo_description?: string; // UA (основной)
-  seo_title_ru?: string;
-  seo_description_ru?: string;
-  seo_title_en?: string;
-  seo_description_en?: string;
-  seo_title_pl?: string;
-  seo_description_pl?: string;
-  // Остальные поля (не менять)
-  author_id?: number | null; // Made optional/nullable to handle legacy or "Editorial" fallback
-  status: 'published' | 'draft' | 'archived';
-  published_at?: string;
-  featured_image?: string;
-  category: string;
-  tags: string[]; // JSONB
+  excerpt?: string;           // Added per spec
+  featured_image_url?: string | null;  // Renamed per spec
+  author_id: number;
+  author?: Author;            // For JOIN
+  status: 'draft' | 'published' | 'archived';
+  views_count?: number;       // Added per spec
+  likes_count?: number;       // Added per spec
   created_at: string;
   updated_at: string;
 }

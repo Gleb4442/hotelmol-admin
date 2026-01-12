@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, X, Send, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
-import { sendBlogOpsN8N, UnifiedBlogOpsPayload, fileToBase64 } from '../lib/n8n';
+import { sendBlogOpsN8N, BlogOpsPayload, fileToBase64 } from '../lib/n8n';
 import { fetchAuthors } from '../services/authorsService';
 import { BlogPost, Author } from '../types/database';
 import { toBase64 } from '../lib/utils';
@@ -43,6 +43,8 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
   const isEditMode = !!initialData;
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [coverImageFile, setCoverImageFile] = useState<File | null>(null);
+  const [coverImagePreview, setCoverImagePreview] = useState<string | null>(null);
 
 
   // State for active tab
@@ -228,43 +230,16 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
       const processedTags = rawTags.split(',').map(t => t.trim()).filter(Boolean);
 
 
-      const payload: UnifiedBlogOpsPayload = {
+      const payload: BlogOpsPayload = {
         action: isEditMode ? 'update' : 'create',
-        post: {
-          id: isEditMode && initialData ? initialData.id : null,
-          title: formData.title,
-          slug: formData.slug || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'), // Client-side slug fallback
-          content: formData.content,
-          status: formData.status!,
-
-          // Taxonomy (mapped to string/array or kept as is if spec allows?)
-          // V2 Spec didn't explicitly show category/tags in post object example, but they are crucial.
-          // I will assume they are part of 'post' object or handled via internal logic.
-          // Spec: "post": {...}
-          // I'll keep them.
-          // category: formData.category,
-          // tags: processedTags,
-
-          image_file: formData.featured_image, // V2 uses image_file for base64
-          seo_title: formData.seo_title,
-          seo_description: formData.seo_description,
-
-          // Multilingual
-          title_ru: formData.title_ru,
-          content_ru: formData.content_ru,
-          title_en: formData.title_en,
-          content_en: formData.content_en,
-          title_pl: formData.title_pl,
-          content_pl: formData.content_pl,
-          seo_title_ru: formData.seo_title_ru,
-          seo_description_ru: formData.seo_description_ru,
-          seo_title_en: formData.seo_title_en,
-          seo_description_en: formData.seo_description_en,
-          seo_title_pl: formData.seo_title_pl,
-          seo_description_pl: formData.seo_description_pl,
-
-          author_id: formData.author_id || 0
-        }
+        post_id: isEditMode && initialData ? initialData.id : undefined,
+        title: formData.title,
+        slug: formData.slug || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        content: formData.content,
+        excerpt: '', // Can be extracted from content if needed
+        featured_image_url: formData.featured_image || null,
+        author_id: formData.author_id || 1,
+        status: formData.status as 'draft' | 'published' | 'archived',
       };
 
       await sendBlogOpsN8N(payload);

@@ -1,68 +1,72 @@
 import { Author } from '../types/database';
 import { safeApiCall } from '../lib/api';
-import { sendAuthorOpsN8N, sendDeleteItemN8N, UnifiedAuthorOpsPayload } from '../lib/n8n';
-import { CONFIG } from '../constants';
+import { sendAuthorOpsN8N, sendDeleteItemN8N, fetchBlogDataN8N, AuthorOpsPayload } from '../lib/n8n';
 
 /**
  * Fetches authors from the N8N Blog Data endpoint.
- * V2 Spec: { data: { posts: [], authors: [] } }
+ * Response: { success: true, data: { posts: [], authors: [], ... } }
  */
 export const fetchAuthors = async (): Promise<Author[]> => {
     return safeApiCall(async () => {
-        const response = await fetch(CONFIG.N8N_BLOG_GET_URL, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${CONFIG.N8N_WEBHOOK_SECRET}`
-            }
-        });
+        const result = await fetchBlogDataN8N();
 
-        if (!response.ok) {
+        if (!result.success) {
             console.warn("Authors Fetch failed, returning empty list.");
             return [];
         }
 
-        const data = await response.json();
-        return (data.data?.authors || []) as Author[];
+        return (result.data?.authors || result.authors || []) as Author[];
     }, 'fetchAuthors');
 };
 
+/**
+ * Author input interface - matches N8N spec
+ */
 export interface AuthorInput {
     name: string;
-    bio: string;
-    location: string;
-    photo_base64?: string; // We'll map this to image_file in the payload
-    existing_photo_url?: string;
+    email: string;           // Required per spec
+    bio?: string;
+    avatar_url?: string;     // For image upload (as data URL or actual URL)
 }
 
+/**
+ * Create a new author
+ */
 export const createAuthor = async (input: AuthorInput): Promise<any> => {
-    return sendAuthorOpsN8N({
+    const payload: AuthorOpsPayload = {
         action: 'create_author',
-        author: {
-            name: input.name,
-            bio: input.bio,
-            location: input.location,
-            image_file: input.photo_base64 || null
-        }
-    });
+        name: input.name,
+        email: input.email,
+        bio: input.bio || null,
+        avatar_url: input.avatar_url || null
+    };
+
+    return sendAuthorOpsN8N(payload);
 };
 
+/**
+ * Update an existing author
+ */
 export const updateAuthor = async (id: number, input: AuthorInput): Promise<any> => {
-    return sendAuthorOpsN8N({
+    const payload: AuthorOpsPayload = {
         action: 'update_author',
-        author: {
-            id: id,
-            name: input.name,
-            bio: input.bio,
-            location: input.location,
-            image_file: input.photo_base64 || null
-        }
-    });
+        author_id: id,
+        name: input.name,
+        email: input.email,
+        bio: input.bio || null,
+        avatar_url: input.avatar_url || null
+    };
+
+    return sendAuthorOpsN8N(payload);
 };
 
+/**
+ * Delete an author
+ */
 export const deleteAuthor = async (id: number): Promise<boolean> => {
     return safeApiCall(async () => {
         await sendDeleteItemN8N({
+            action: 'delete',
             type: 'author',
             id: id
         });

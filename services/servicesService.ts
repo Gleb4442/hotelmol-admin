@@ -2,7 +2,6 @@ import { Service } from '../types/database';
 import { safeApiCall } from '../lib/api';
 import { CONFIG } from '../constants';
 import { Logger } from '../lib/logger';
-import { sendDeleteItemN8N } from '../lib/n8n';
 
 // "Services" here refers to AI Knowledge Base entries (Services offered by hotel).
 // Operations must go through N8N.
@@ -12,8 +11,7 @@ export const fetchServices = async (): Promise<Service[]> => {
         const response = await fetch(CONFIG.N8N_SERVICES_URL, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${CONFIG.N8N_WEBHOOK_SECRET}`
+                'Content-Type': 'application/json'
             }
         });
 
@@ -26,10 +24,9 @@ export const fetchServices = async (): Promise<Service[]> => {
 export const createService = async (data: Partial<Service>): Promise<Service> => {
     return safeApiCall(async () => {
         const response = await fetch(CONFIG.N8N_SERVICES_URL, {
-            method: 'POST', // or Use Ingest URL if strict separation? Reusing Services CRUD URL for consistency.
+            method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${CONFIG.N8N_WEBHOOK_SECRET}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 action: 'create',
@@ -52,8 +49,7 @@ export const updateService = async (id: number, data: Partial<Service>): Promise
         const response = await fetch(CONFIG.N8N_SERVICES_URL, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': `Bearer ${CONFIG.N8N_WEBHOOK_SECRET}`
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify({
                 action: 'update',
@@ -73,17 +69,17 @@ export const updateService = async (id: number, data: Partial<Service>): Promise
 
 export const deleteService = async (id: number): Promise<void> => {
     return safeApiCall(async () => {
-        // Reuse Delete Item generic or Services specific?
-        // Let's use Delete Item generic if N8N handles 'type: service'
-        try {
-            await sendDeleteItemN8N({ type: 'service', id });
-        } catch (e) {
-            // Fallback to services endpoint if generic fails
-            await fetch(CONFIG.N8N_SERVICES_URL, {
-                method: 'DELETE', // If supported, or POST with action delete
-                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${CONFIG.N8N_WEBHOOK_SECRET}` },
-                body: JSON.stringify({ action: 'delete', id })
-            });
+        // Services have their own endpoint for deletion
+        const response = await fetch(CONFIG.N8N_SERVICES_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ action: 'delete', id })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to delete service: ${response.status}`);
         }
     }, 'deleteService');
 };
