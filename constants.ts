@@ -1,0 +1,77 @@
+import { BlogPost, ContactForm, DemoRequest, RoiCalculation, CookieConsent, Service, ChatLog } from "./types/database";
+import { Post } from "./types";
+
+/**
+ * PRODUCTION CONFIGURATION
+ * Now reading from import.meta.env (Vite Environment Variables).
+ * 
+ * Create a .env file in the root directory with:
+ * VITE_DATABASE_URL=postgresql://...
+ * VITE_N8N_WEBHOOK_URL=https://...
+ * VITE_N8N_WEBHOOK_SECRET=...
+ * VITE_ADMIN_USER=admin
+ * VITE_ADMIN_PASSWORD=...
+ */
+
+const getEnv = (key: string, required = false): string => {
+  // @ts-ignore - Vite specific
+  const val = import.meta.env[key];
+  if (required && !val) {
+    console.warn(`Missing Environment Variable: ${key}. App may not function correctly in production.`);
+    return '';
+  }
+  return val ? String(val) : '';
+};
+
+export const CONFIG = {
+  DATABASE_URL: getEnv('VITE_DATABASE_URL', true),
+
+  // N8N URLs - Using relative paths that get proxied via Vercel rewrites
+  // Actual n8n endpoints:
+  // - /webhook/blog/write (POST) - create/update posts & authors
+  // - /webhook/get-blog-data (GET) - fetch posts & authors
+  // - /webhook/delete-item (POST) - delete posts & authors
+  // - /webhook/cookie-consent (POST) - cookie consents
+  // - /webhook/contact-form (POST) - contact form submissions
+
+  N8N_BLOG_OPS_URL: '/api/n8n/blog/write',
+  N8N_BLOG_GET_URL: '/api/n8n/get-blog-data',
+  N8N_DELETE_ITEM_URL: '/api/n8n/delete-item',
+
+  N8N_CHAT_URL: '/api/n8n/chat',
+  N8N_CHAT_HISTORY_URL: '/api/n8n/chat-history',
+  N8N_INGEST_URL: '/api/n8n/ingest-knowledge',
+  N8N_SERVICES_URL: '/api/n8n/services',
+
+  N8N_CONTACT_URL: '/api/n8n/contact-form',
+  N8N_COOKIE_URL: '/api/n8n/cookie-consent',
+
+  N8N_WEBHOOK_SECRET: getEnv('VITE_N8N_WEBHOOK_SECRET') || 'adminblogwebhooksecret556',
+
+  ADMIN_USER: getEnv('VITE_ADMIN_USER') || 'admin',
+  ADMIN_PASSWORD: getEnv('VITE_ADMIN_PASSWORD') || 'hotelmol_secure_2024',
+};
+
+// Fallback Mock Data is kept ONLY for components that fail to fetch real data
+// or during the transition period if tables don't exist yet.
+
+// Helper to generate a date relative to today (daysAgo)
+const getDate = (daysAgo: number, hoursAgo: number = 0) => {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  d.setHours(d.getHours() - hoursAgo);
+  return d.toISOString();
+};
+
+export const MOCK_DEMO_REQUESTS: DemoRequest[] = [
+  { id: 1, name: 'Example User', email: 'user@example.com', hotel_name: 'Demo Hotel', data_processing_consent: true, marketing_consent: true, created_at: getDate(0, 1), updated_at: getDate(0, 1) },
+];
+
+export const MOCK_CONTACTS: ContactForm[] = [
+  { id: 1, name: 'Contact Lead', email: 'contact@example.com', phone: '123456', position: 'Manager', hotel_name: 'Test Hotel', message: 'Hello', data_processing_consent: true, marketing_consent: true, created_at: getDate(0, 5), updated_at: getDate(0, 5) },
+];
+
+export const MOCK_ROI_CALCULATIONS: RoiCalculation[] = [];
+export const MOCK_COOKIE_CONSENTS: CookieConsent[] = [];
+export const MOCK_INITIAL_POSTS: Post[] = [];
+export const MOCK_BLOG_POSTS_FULL: BlogPost[] = [];

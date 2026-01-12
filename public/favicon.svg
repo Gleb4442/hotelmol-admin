@@ -1,0 +1,6 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <!-- Blue rounded square background -->
+  <rect width="64" height="64" rx="10" fill="#2563eb" />
+  <!-- Bold, clean 'H' drawn with a path for maximum consistency -->
+  <path d="M20 16V48M44 16V48M20 32H44" stroke="white" stroke-width="10" stroke-linecap="butt" />
+</svg>

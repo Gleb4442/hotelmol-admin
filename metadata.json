@@ -1,0 +1,5 @@
+{
+  "name": "hotelmol Admin",
+  "description": "Production Ready Admin Panel for hotelmol.com using VITE_ env vars and Real Neon DB connection.",
+  "requestFramePermissions": []
+}
