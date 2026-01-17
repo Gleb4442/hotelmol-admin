@@ -15,6 +15,9 @@ export const fetchCookieConsents = async (params: CookieConsentParams): Promise<
 
     const url = `${CONFIG.N8N_COOKIE_URL}?${queryParams.toString()}`;
 
+    console.log('[CookieService] Fetching from:', url);
+    console.log('[CookieService] Headers:', { 'X-Api-Key-Blog-Publishing': '***' });
+
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -23,9 +26,12 @@ export const fetchCookieConsents = async (params: CookieConsentParams): Promise<
       }
     });
 
+    console.log('[CookieService] Response status:', response.status);
+
     if (!response.ok) {
-      console.warn("Cookie Consent Fetch failed:", response.status);
-      return { items: [], total: 0 };
+      const errorText = await response.text();
+      console.error(`[CookieService] Fetch failed: ${response.status}`, errorText);
+      throw new Error(`Failed to fetch cookie consents: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();

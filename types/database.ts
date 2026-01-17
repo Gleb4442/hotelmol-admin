@@ -73,6 +73,7 @@ export interface BlogPost {
   content: string;
   excerpt?: string;           // Added per spec
   featured_image_url?: string | null;  // Renamed per spec
+  category?: string;          // Blog category/tag
   author_id: number;
   author?: Author;            // For JOIN
   status: 'draft' | 'published' | 'archived';
