@@ -5,25 +5,28 @@ import { CookieConsent } from '../types/database';
 
 export const fetchCookieConsents = async (params: CookieConsentParams): Promise<CookieConsentResponse> => {
   return safeApiCall(async () => {
-    // Build URL with query params (relative path for Vercel proxy)
-    const queryParams = new URLSearchParams();
-    queryParams.append('page', params.page.toString());
-    queryParams.append('limit', params.pageSize.toString());
-    if (params.dateFrom) queryParams.append('dateFrom', params.dateFrom);
-    if (params.dateTo) queryParams.append('dateTo', params.dateTo);
-    queryParams.append('sortDir', params.sortDir || 'desc');
+    // Build request body with parameters
+    const requestBody = {
+      page: params.page,
+      limit: params.pageSize,
+      dateFrom: params.dateFrom,
+      dateTo: params.dateTo,
+      sortDir: params.sortDir || 'desc'
+    };
 
-    const url = `${CONFIG.N8N_COOKIE_URL}?${queryParams.toString()}`;
+    const url = CONFIG.N8N_COOKIE_URL;
 
     console.log('[CookieService] Fetching from:', url);
+    console.log('[CookieService] Request body:', requestBody);
     console.log('[CookieService] Headers:', { 'X-Api-Key-Blog-Publishing': '***' });
 
     const response = await fetch(url, {
-      method: 'GET',
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-Api-Key-Blog-Publishing': CONFIG.N8N_WEBHOOK_SECRET
-      }
+      },
+      body: JSON.stringify(requestBody)
     });
 
     console.log('[CookieService] Response status:', response.status);
