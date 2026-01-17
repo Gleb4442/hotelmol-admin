@@ -3,6 +3,8 @@ export interface DemoRequest {
   name: string;
   email: string;
   hotel_name: string;
+  form_type: string;
+  submitted_at: string;
   data_processing_consent: boolean;
   marketing_consent: boolean;
   created_at: string;
@@ -16,6 +18,7 @@ export interface ContactForm {
   phone: string;
   position: string;
   hotel_name: string;
+  subject: string;
   message: string;
   company?: string;
   integration_type?: string;
@@ -29,11 +32,14 @@ export interface ContactForm {
 export interface RoiCalculation {
   id: number;
   name: string;
+  email: string;
   phone: string;
   hotel_size: number;
+  current_revenue: number;
   calculated_roi: number;
   monthly_savings: number;
   annual_revenue: number;
+  submitted_at: string;
   data_processing_consent: boolean;
   marketing_consent: boolean;
   created_at: string;
@@ -109,4 +115,46 @@ export interface KnowledgeBaseItem {
   description?: string; // Keeping description as per 'Service' but typically KB has 'content'
   embedding?: number[];
   created_at: string;
+}
+
+export interface FullLeadData {
+  id: number;
+  source: 'demo' | 'contact' | 'roi';
+  name: string;
+  email: string;
+  phone: string | null;
+  company: string | null;
+  hotel_size: number | null;
+  message: string | null;
+  detail: string;
+  integration_type: string | null;
+  calculated_roi: number | null;
+  responded_at: string | null;
+  created_at: string;
+  is_new?: boolean;
+  position?: string | null;
+  form_type?: string | null;
+  current_revenue?: number | null;
+  monthly_savings?: number | null;
+  annual_revenue?: number | null;
+  data_processing_consent?: boolean;
+  marketing_consent?: boolean;
+}
+
+export interface LeadFilters {
+  page: number;
+  pageSize: number;
+  dateFrom?: string;
+  dateTo?: string;
+  source?: 'all' | 'demo' | 'contact' | 'roi';
+  searchTerm?: string;
+  sortDir?: 'asc' | 'desc';
+  showResponded?: boolean;
+}
+
+export interface LeadsResponse {
+  items: FullLeadData[];
+  total: number;
+  page: number;
+  pageSize: number;
 }

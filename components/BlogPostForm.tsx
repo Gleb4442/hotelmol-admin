@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, X, Send, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
-import { sendBlogOpsN8N, BlogOpsPayload, fileToBase64 } from '../lib/n8n';
+import { sendBlogOpsN8N, BlogOpsPayload } from '../lib/n8n';
 import { fetchAuthors } from '../services/authorsService';
 import { BlogPost, Author } from '../types/database';
-import { toBase64 } from '../lib/utils';
+import { compressImage } from '../lib/utils';
 
 interface BlogPostFormProps {
   initialData?: BlogPost; // If present, we are in EDIT mode
@@ -142,8 +142,9 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
     if (e.target.files && e.target.files[0]) {
       try {
         const file = e.target.files[0];
-        const base64 = await fileToBase64(file);
-        setFormData(prev => ({ ...prev, featured_image: base64 }));
+        // Compress image to reduce payload size (max 800px width, 70% quality)
+        const compressedBase64 = await compressImage(file, 800, 0.7);
+        setFormData(prev => ({ ...prev, featured_image: compressedBase64 }));
       } catch (err) {
         console.error("Image upload failed", err);
         setError("Failed to process image");
@@ -155,17 +156,14 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
     if (e.target.files && e.target.files[0]) {
       try {
         const file = e.target.files[0];
-        const base64 = await fileToBase64(file);
-        const markdownImage = `\n![${file.name}](${base64})\n`;
+        // Compress inline images too (max 600px for inline)
+        const compressedBase64 = await compressImage(file, 600, 0.6);
+        const markdownImage = `\n![${file.name}](${compressedBase64})\n`;
 
         // Insert into the active tab's content
         setFormData(prev => {
           const contentField = activeTab === 'ua' ? 'content' : `content_${activeTab}` as keyof PostFormData;
           const currentContent = prev[contentField] as string || '';
-
-          // Simple append for now, or we could try to insert at cursor if we had ref
-          // Since we don't track cursor position in state easily without ref, appending or inserting at end is safest default.
-          // Ideally: "Insert at Cursor" requires ref to textarea.
 
           return {
             ...prev,

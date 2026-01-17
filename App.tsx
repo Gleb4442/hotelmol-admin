@@ -14,6 +14,7 @@ import { LoginPage } from './components/LoginPage';
 import { ServicesManager } from './components/ServicesManager';
 import { ChatHistory } from './components/ChatHistory';
 import { AuthorsManager } from './components/AuthorsManager';
+import { LeadsManager } from './components/LeadsManager';
 import {
   Activity,
   LayoutDashboard,
@@ -545,6 +546,12 @@ const App: React.FC = () => {
             label="Content Manager"
           />
           <SidebarItem
+            active={activeTab === NavItem.LEADS}
+            onClick={() => { setActiveTab(NavItem.LEADS); }}
+            icon={<Users size={20} />}
+            label="Leads Manager"
+          />
+          <SidebarItem
             active={activeTab === NavItem.AUTHORS}
             onClick={() => { setActiveTab(NavItem.AUTHORS); }}
             icon={<Users size={20} />}
@@ -607,6 +614,7 @@ const App: React.FC = () => {
               {activeTab === NavItem.DASHBOARD && 'Analytics Overview'}
               {activeTab === NavItem.SCHEMA && 'Database Architecture'}
               {activeTab === NavItem.POSTS && (postView === 'list' ? 'Content Management' : postView === 'create' ? 'Create New Post' : 'Edit Post')}
+              {activeTab === NavItem.LEADS && 'Leads Manager'}
               {activeTab === NavItem.COMPLIANCE && 'GDPR & Cookie Logs'}
               {activeTab === NavItem.SETTINGS && 'Environment Variables'}
               {activeTab === NavItem.AI_TRAINING && 'AI Knowledge Base'}
@@ -783,6 +791,9 @@ const App: React.FC = () => {
           {activeTab === NavItem.AI_TRAINING && <ServicesManager />}
           {activeTab === NavItem.CHAT_LOGS && <ChatHistory />}
           {activeTab === NavItem.AUTHORS && <AuthorsManager />}
+
+          {/* LEADS VIEW */}
+          {activeTab === NavItem.LEADS && <LeadsManager />}
 
           {/* POSTS VIEW - LIST */}
           {activeTab === NavItem.POSTS && postView === 'list' && (

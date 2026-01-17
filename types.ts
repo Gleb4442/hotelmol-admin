@@ -19,6 +19,7 @@ export enum NavItem {
   DASHBOARD = 'dashboard',
   SCHEMA = 'schema',
   POSTS = 'posts',
+  LEADS = 'leads',
   COMPLIANCE = 'compliance', // Stage 5
   SETTINGS = 'settings',
   AI_TRAINING = 'ai_training',
