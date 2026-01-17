@@ -166,7 +166,7 @@ export async function fetchBlogDataN8N(params?: {
   }, 'fetchBlogDataN8N');
 }
 
-// Helper to convert File to Base64
+// Helper to convert File to Base64 (for inline images only)
 export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -179,3 +179,118 @@ export const fileToBase64 = (file: File): Promise<string> => {
     reader.onerror = error => reject(error);
   });
 };
+
+/**
+ * Send Author Operation with File Upload using FormData
+ * N8N requires multipart/form-data with binary file named 'data'
+ */
+export async function sendAuthorOpsWithFile(payload: {
+  action: 'create_author' | 'update_author';
+  author_id?: number;
+  name: string;
+  email: string;
+  bio?: string | null;
+  avatarFile?: File | null;
+}) {
+  return safeApiCall(async () => {
+    if (!CONFIG.N8N_BLOG_OPS_URL) throw new Error("Missing N8N_BLOG_OPS_URL");
+
+    Logger.info("Initiating Author Ops with File Upload", { action: payload.action, name: payload.name });
+
+    // Create FormData
+    const formData = new FormData();
+    formData.append('action', payload.action);
+    formData.append('scenario', payload.action); // Add scenario field
+    formData.append('name', payload.name);
+    formData.append('email', payload.email);
+
+    if (payload.author_id) {
+      formData.append('author_id', payload.author_id.toString());
+    }
+
+    if (payload.bio) {
+      formData.append('bio', payload.bio);
+    }
+
+    // ВАЖНО: имя поля ОБЯЗАТЕЛЬНО должно быть 'data'
+    if (payload.avatarFile) {
+      formData.append('data', payload.avatarFile, payload.avatarFile.name);
+    }
+
+    const response = await fetch(CONFIG.N8N_BLOG_OPS_URL, {
+      method: 'POST',
+      // НЕ УСТАНАВЛИВАЕМ Content-Type! Браузер сам установит с boundary
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`N8N Author Error: ${response.status} ${errorText.substring(0, 200)}`);
+    }
+
+    return await response.json();
+  }, 'sendAuthorOpsWithFile');
+}
+
+/**
+ * Send Blog Post Operation with File Upload using FormData
+ * N8N requires multipart/form-data with binary file named 'data'
+ */
+export async function sendBlogOpsWithFile(payload: {
+  action: 'create' | 'update';
+  post_id?: number;
+  title: string;
+  slug: string;
+  content: string;
+  excerpt?: string;
+  author_id: number;
+  status: 'draft' | 'published' | 'archived';
+  category?: string;
+  featuredImageFile?: File | null;
+}) {
+  return safeApiCall(async () => {
+    if (!CONFIG.N8N_BLOG_OPS_URL) throw new Error("Missing N8N_BLOG_OPS_URL");
+
+    Logger.info("Initiating Blog Ops with File Upload", { action: payload.action, title: payload.title });
+
+    // Create FormData
+    const formData = new FormData();
+    formData.append('action', payload.action);
+    formData.append('scenario', payload.action); // Add scenario field
+    formData.append('title', payload.title);
+    formData.append('slug', payload.slug);
+    formData.append('content', payload.content);
+    formData.append('author_id', payload.author_id.toString());
+    formData.append('status', payload.status);
+
+    if (payload.post_id) {
+      formData.append('post_id', payload.post_id.toString());
+    }
+
+    if (payload.excerpt) {
+      formData.append('excerpt', payload.excerpt);
+    }
+
+    if (payload.category) {
+      formData.append('category', payload.category);
+    }
+
+    // ВАЖНО: имя поля ОБЯЗАТЕЛЬНО должно быть 'data'
+    if (payload.featuredImageFile) {
+      formData.append('data', payload.featuredImageFile, payload.featuredImageFile.name);
+    }
+
+    const response = await fetch(CONFIG.N8N_BLOG_OPS_URL, {
+      method: 'POST',
+      // НЕ УСТАНАВЛИВАЕМ Content-Type! Браузер сам установит с boundary
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`N8N Blog Error: ${response.status} ${errorText.substring(0, 200)}`);
+    }
+
+    return await response.json();
+  }, 'sendBlogOpsWithFile');
+}

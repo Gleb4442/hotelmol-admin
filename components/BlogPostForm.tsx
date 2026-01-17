@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, X, Send, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
-import { sendBlogOpsN8N, BlogOpsPayload } from '../lib/n8n';
+import { fileToBase64 } from '../lib/n8n';
 import { fetchAuthors } from '../services/authorsService';
+import { createBlogPost, updateBlogPost } from '../services/blogService';
 import { BlogPost, Author } from '../types/database';
 import { compressImage } from '../lib/utils';
 
@@ -219,28 +220,28 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
     setError(null);
 
     try {
-      let featured_image_base64 = '';
-      if (coverImageFile) {
-        featured_image_base64 = await toBase64(coverImageFile);
-      }
+      // Process tags (if needed later)
+      const processedTags = rawTags.split(',').map((t: string) => t.trim()).filter(Boolean);
 
-      // Process tags
-      const processedTags = rawTags.split(',').map(t => t.trim()).filter(Boolean);
-
-
-      const payload: BlogOpsPayload = {
-        action: isEditMode ? 'update' : 'create',
-        post_id: isEditMode && initialData ? initialData.id : undefined,
+      // Prepare blog post data
+      const postData: Partial<BlogPost> = {
         title: formData.title,
         slug: formData.slug || formData.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
         content: formData.content,
-        excerpt: '', // Can be extracted from content if needed
-        featured_image_url: formData.featured_image || null,
+        excerpt: formData.content.substring(0, 160), // Auto-generate excerpt from content
         author_id: formData.author_id || 1,
         status: formData.status as 'draft' | 'published' | 'archived',
+        category: formData.category,
+        // Keep existing featured_image if no new file
+        featured_image_url: formData.featured_image || null,
       };
 
-      await sendBlogOpsN8N(payload);
+      // Call the appropriate service method with File object
+      if (isEditMode && initialData) {
+        await updateBlogPost(initialData.id, postData, coverImageFile);
+      } else {
+        await createBlogPost(postData, coverImageFile);
+      }
 
       onSuccess();
     } catch (err: any) {

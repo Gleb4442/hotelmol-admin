@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, User, Loader2, Save, X, Mail, Trash2 } from 'lucide-react';
 import { Author } from '../types/database';
 import { fetchAuthors, createAuthor, updateAuthor, deleteAuthor, AuthorInput } from '../services/authorsService';
-import { fileToBase64 } from '../lib/n8n';
 
 // Email validation regex
 const validateEmail = (email: string): boolean => {
@@ -92,10 +91,11 @@ export const AuthorsManager: React.FC = () => {
                 bio: formData.bio || undefined
             };
 
+            // Pass the File object directly (not base64!)
             if (selectedFile) {
-                const dataUrl = await fileToBase64(selectedFile);
-                authorData.avatar_url = dataUrl;
+                authorData.avatarFile = selectedFile;
             } else if (editingAuthor?.avatar_url) {
+                // Keep existing avatar URL if no new file
                 authorData.avatar_url = editingAuthor.avatar_url;
             }
 
