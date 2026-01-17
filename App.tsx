@@ -650,21 +650,14 @@ const App: React.FC = () => {
           {activeTab === NavItem.DASHBOARD && (
             <div className="space-y-6">
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Stats Grid - Only 3 Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <StatCard
                   label="Total Leads"
                   value={stats?.totalLeads || 0}
                   subtext="Demo + Contact + ROI"
                   icon={<Users size={20} />}
                   colorClass="text-blue-600"
-                />
-                <StatCard
-                  label="New Leads (24h)"
-                  value={stats?.newLeads || 0}
-                  subtext={stats?.newLeads ? "+12% vs yesterday" : "No recent activity"}
-                  icon={<MousePointer2 size={20} />}
-                  colorClass="text-green-600"
                 />
                 <StatCard
                   label="Published Posts"
@@ -680,106 +673,6 @@ const App: React.FC = () => {
                   icon={<Cookie size={20} />}
                   colorClass="text-orange-600"
                 />
-              </div>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                {/* Leads Chart (Simple CSS Bar Chart) */}
-                <div className="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
-                  <h3 className="text-base font-semibold text-gray-900 mb-6">Leads Growth (Last 30 Days)</h3>
-                  <div className="h-64 flex items-end justify-between space-x-1">
-                    {chartData.map((d, i) => {
-                      const max = Math.max(...chartData.map(c => c.count), 1);
-                      const height = Math.max((d.count / max) * 100, 5); // min 5% height
-                      return (
-                        <div key={d.date} className="flex-1 flex flex-col items-center group relative">
-                          <div
-                            className={`w-full max-w-[12px] rounded-t-sm transition-all duration-500 ${d.count > 0 ? 'bg-blue-500 group-hover:bg-blue-600' : 'bg-gray-100'}`}
-                            style={{ height: `${height}%` }}
-                          />
-                          {/* Tooltip */}
-                          <div className="absolute bottom-full mb-2 hidden group-hover:flex flex-col items-center bg-gray-900 text-white text-xs rounded py-1 px-2 z-10 whitespace-nowrap">
-                            <span>{d.date}</span>
-                            <span className="font-bold">{d.count} Leads</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-4 flex justify-between text-xs text-gray-400">
-                    <span>30 days ago</span>
-                    <span>Today</span>
-                  </div>
-                </div>
-
-                {/* Recent Activity */}
-                <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col">
-                  <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h3 className="text-base font-semibold text-gray-900">Latest Activity</h3>
-                    <span className="text-xs bg-white border border-gray-200 px-2 py-1 rounded text-gray-500">Live</span>
-                  </div>
-                  <div className="p-0 overflow-y-auto flex-1 max-h-[300px]">
-                    <div className="divide-y divide-gray-100">
-                      {latestLeads.map((lead) => (
-                        <div key={`${lead.source}-${lead.id}`} className="px-6 py-4 hover:bg-gray-50 transition-colors">
-                          <div className="flex items-start justify-between">
-                            <div className="flex items-center space-x-3">
-                              <div className={`w-10 h-10 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${lead.source === 'demo' ? 'bg-blue-100 text-blue-700' :
-                                lead.source === 'roi' ? 'bg-green-100 text-green-700' :
-                                  'bg-purple-100 text-purple-700'
-                                }`}>
-                                {lead.source === 'demo' ? 'DEMO' : lead.source === 'roi' ? 'ROI' : 'MSG'}
-                              </div>
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <p className="text-sm font-semibold text-gray-900 truncate">{lead.name}</p>
-                                  {lead.integration_type && (
-                                    <span className="text-[9px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded border border-gray-200 uppercase font-bold tracking-tight">
-                                      {lead.integration_type}
-                                    </span>
-                                  )}
-                                </div>
-                                {lead.company && <p className="text-xs text-blue-600 font-medium truncate">{lead.company}</p>}
-                                <p className="text-xs text-gray-500 truncate opacity-70 italic mt-0.5" title={lead.detail}>
-                                  "{lead.detail}"
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex flex-col items-end shrink-0 ml-2">
-                              {lead.is_new && <span className="text-[10px] font-bold text-green-600 bg-green-50 px-1.5 rounded mb-1 ring-1 ring-green-200">NEW</span>}
-                              <span className="text-[10px] text-gray-400 font-mono">{new Date(lead.created_at).toLocaleDateString()}</span>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                      {latestLeads.length === 0 && (
-                        <div className="p-6 text-center text-gray-400 text-sm">No recent activity found.</div>
-                      )}
-                    </div>
-                  </div>
-                  <div className="p-3 border-t border-gray-200 bg-gray-50 text-center">
-                    <button className="text-xs font-medium text-blue-600 hover:text-blue-800 flex items-center justify-center gap-1 w-full">
-                      View all leads <ArrowUpRight size={12} />
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* System Health (Existing Status Cards) */}
-              <div className="mt-8">
-                <h3 className="text-sm font-medium text-gray-500 mb-4 uppercase tracking-wider">System Health</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <StatusCard
-                    status={neonStatus}
-                    onRetry={() => testNeonConnection().then(res => setNeonStatus({ ...neonStatus, status: res.success ? 'connected' : 'error', message: res.message, latency: res.latency }))}
-                    icon={<Database size={24} className="text-emerald-600" />}
-                  />
-                  <StatusCard
-                    status={n8nStatus}
-                    onRetry={() => testN8nConnection().then(res => setN8nStatus({ ...n8nStatus, status: res.success ? 'connected' : 'error', message: res.message, latency: res.latency }))}
-                    icon={<Webhook size={24} className="text-purple-600" />}
-                  />
-                </div>
               </div>
             </div>
           )}

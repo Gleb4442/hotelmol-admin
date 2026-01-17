@@ -37,7 +37,29 @@ export const fetchCookieConsents = async (params: CookieConsentParams): Promise<
       throw new Error(`Failed to fetch cookie consents: ${response.status} - ${errorText}`);
     }
 
+    // Check content type and handle non-JSON responses
+    const contentType = response.headers.get('content-type');
+    console.log('[CookieService] Response content-type:', contentType);
+
+    if (!contentType || !contentType.includes('application/json')) {
+      const textResponse = await response.text();
+      console.warn('[CookieService] Non-JSON response received:', textResponse);
+
+      // If we get "ok" or similar text response, return empty data
+      if (textResponse.toLowerCase() === 'ok' || textResponse.trim() === '') {
+        console.warn('[CookieService] Received text response, returning empty dataset');
+        return {
+          items: [],
+          total: 0
+        };
+      }
+
+      throw new Error(`Unexpected response format: ${textResponse.substring(0, 100)}`);
+    }
+
     const data = await response.json();
+    console.log('[CookieService] Parsed data:', data);
+
     // Expected format: { items: [], total: number } or { consents: [] }
     const items = data.items || data.consents || [];
 
