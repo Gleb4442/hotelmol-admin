@@ -9,6 +9,11 @@ const isRecent = (dateString: string, hours: number = 24) => {
   return diffMs < (hours * 60 * 60 * 1000);
 };
 
+// Helper to safely extract field from any object
+const safeGet = (obj: any, field: string, defaultValue: any = null) => {
+  return obj && obj[field] !== undefined && obj[field] !== null ? obj[field] : defaultValue;
+};
+
 export const fetchAllLeads = async (filters?: LeadFilters): Promise<LeadsResponse> => {
   return safeApiCall(async () => {
     const {
@@ -24,165 +29,196 @@ export const fetchAllLeads = async (filters?: LeadFilters): Promise<LeadsRespons
 
     const offset = (page - 1) * pageSize;
 
-    // Build base query with UNION ALL
-    let whereConditions: string[] = [];
-    const params: any[] = [];
+    try {
+      // Fetch data from each table separately to avoid schema mismatches
+      const allLeads: FullLeadData[] = [];
 
-    // Date filtering
-    if (dateFrom) {
-      whereConditions.push(`created_at >= '${dateFrom}'`);
-    }
-    if (dateTo) {
-      whereConditions.push(`created_at <= '${dateTo}'`);
-    }
-
-    // Search term filtering (apply to name, email, company)
-    let searchFilter = '';
-    if (searchTerm && searchTerm.trim()) {
-      searchFilter = `
-        (LOWER(name) LIKE LOWER('%${searchTerm}%')
-        OR LOWER(email) LIKE LOWER('%${searchTerm}%')
-        OR LOWER(COALESCE(company, '')) LIKE LOWER('%${searchTerm}%'))
-      `;
-    }
-
-    // Build UNION query based on source filter
-    const buildQuery = (table: 'demo' | 'contact' | 'roi', includeTable: boolean) => {
-      if (!includeTable) return '';
-
-      let query = '';
-      if (table === 'demo') {
-        query = `
-          SELECT
-            id, 'demo' as source, name, email, NULL as phone,
-            hotel_name as company, NULL as hotel_size, NULL as message,
-            form_type as detail, NULL as integration_type, NULL as calculated_roi,
-            NULL as responded_at, submitted_at as created_at,
-            NULL as position, form_type, NULL as current_revenue,
-            NULL as monthly_savings, NULL as annual_revenue,
-            data_processing_consent, marketing_consent
-          FROM demo_requests
-        `;
-      } else if (table === 'contact') {
-        query = `
-          SELECT
-            id, 'contact' as source, name, email, phone,
-            company, NULL as hotel_size, message,
-            subject as detail, integration_type, NULL as calculated_roi,
-            responded_at, created_at,
-            position, NULL as form_type, NULL as current_revenue,
-            NULL as monthly_savings, NULL as annual_revenue,
-            data_processing_consent, marketing_consent
-          FROM contact_forms
-        `;
-      } else if (table === 'roi') {
-        query = `
-          SELECT
-            id, 'roi' as source, name, email, phone,
-            NULL as company, hotel_size, NULL as message,
-            'ROI: ' || current_revenue::text as detail, NULL as integration_type,
-            calculated_roi, NULL as responded_at, submitted_at as created_at,
-            NULL as position, NULL as form_type, current_revenue,
-            monthly_savings, annual_revenue,
-            data_processing_consent, marketing_consent
-          FROM roi_calculations
-        `;
+      // Fetch Demo Requests
+      if (source === 'all' || source === 'demo') {
+        try {
+          const demoResults = await sql`SELECT * FROM demo_requests ORDER BY created_at DESC`;
+          demoResults.forEach((row: any) => {
+            const createdAt = safeGet(row, 'submitted_at') || safeGet(row, 'created_at', new Date().toISOString());
+            allLeads.push({
+              id: safeGet(row, 'id', 0),
+              source: 'demo',
+              name: safeGet(row, 'name', 'Anonymous'),
+              email: safeGet(row, 'email', ''),
+              phone: safeGet(row, 'phone'),
+              company: safeGet(row, 'hotel_name') || safeGet(row, 'company'),
+              hotel_size: null,
+              message: safeGet(row, 'message'),
+              detail: safeGet(row, 'form_type', ''),
+              integration_type: null,
+              calculated_roi: null,
+              responded_at: null,
+              created_at: createdAt,
+              is_new: isRecent(createdAt),
+              position: safeGet(row, 'position'),
+              form_type: safeGet(row, 'form_type'),
+              current_revenue: null,
+              monthly_savings: null,
+              annual_revenue: null,
+              data_processing_consent: safeGet(row, 'data_processing_consent', false),
+              marketing_consent: safeGet(row, 'marketing_consent', false)
+            });
+          });
+        } catch (e) {
+          console.warn('Failed to fetch demo_requests:', e);
+        }
       }
 
-      // Add WHERE conditions
-      const conditions = [...whereConditions];
-      if (searchFilter) conditions.push(searchFilter);
+      // Fetch Contact Forms
+      if (source === 'all' || source === 'contact') {
+        try {
+          const contactResults = await sql`SELECT * FROM contact_forms ORDER BY created_at DESC`;
+          contactResults.forEach((row: any) => {
+            const createdAt = safeGet(row, 'created_at', new Date().toISOString());
+            const respondedAt = safeGet(row, 'responded_at');
 
-      // For contact forms, add responded filter
-      if (table === 'contact' && !showResponded) {
-        conditions.push('responded_at IS NULL');
+            // Apply responded filter if needed
+            if (!showResponded && respondedAt) {
+              return; // Skip responded leads if filter is active
+            }
+
+            allLeads.push({
+              id: safeGet(row, 'id', 0),
+              source: 'contact',
+              name: safeGet(row, 'name', 'Anonymous'),
+              email: safeGet(row, 'email', ''),
+              phone: safeGet(row, 'phone'),
+              company: safeGet(row, 'company') || safeGet(row, 'hotel_name'),
+              hotel_size: null,
+              message: safeGet(row, 'message'),
+              detail: safeGet(row, 'subject', ''),
+              integration_type: safeGet(row, 'integration_type'),
+              calculated_roi: null,
+              responded_at: respondedAt,
+              created_at: createdAt,
+              is_new: isRecent(createdAt),
+              position: safeGet(row, 'position'),
+              form_type: null,
+              current_revenue: null,
+              monthly_savings: null,
+              annual_revenue: null,
+              data_processing_consent: safeGet(row, 'data_processing_consent', false),
+              marketing_consent: safeGet(row, 'marketing_consent', false)
+            });
+          });
+        } catch (e) {
+          console.warn('Failed to fetch contact_forms:', e);
+        }
       }
 
-      if (conditions.length > 0) {
-        query += ' WHERE ' + conditions.join(' AND ');
+      // Fetch ROI Calculations
+      if (source === 'all' || source === 'roi') {
+        try {
+          const roiResults = await sql`SELECT * FROM roi_calculations ORDER BY created_at DESC`;
+          roiResults.forEach((row: any) => {
+            const createdAt = safeGet(row, 'submitted_at') || safeGet(row, 'created_at', new Date().toISOString());
+            const currentRevenue = safeGet(row, 'current_revenue', 0);
+
+            allLeads.push({
+              id: safeGet(row, 'id', 0),
+              source: 'roi',
+              name: safeGet(row, 'name', 'Anonymous'),
+              email: safeGet(row, 'email', ''),
+              phone: safeGet(row, 'phone'),
+              company: safeGet(row, 'hotel_name') || safeGet(row, 'company'),
+              hotel_size: safeGet(row, 'hotel_size') ? Number(safeGet(row, 'hotel_size')) : null,
+              message: null,
+              detail: `ROI: ${currentRevenue}`,
+              integration_type: null,
+              calculated_roi: safeGet(row, 'calculated_roi') ? Number(safeGet(row, 'calculated_roi')) : null,
+              responded_at: null,
+              created_at: createdAt,
+              is_new: isRecent(createdAt),
+              position: null,
+              form_type: null,
+              current_revenue: currentRevenue ? Number(currentRevenue) : null,
+              monthly_savings: safeGet(row, 'monthly_savings') ? Number(safeGet(row, 'monthly_savings')) : null,
+              annual_revenue: safeGet(row, 'annual_revenue') ? Number(safeGet(row, 'annual_revenue')) : null,
+              data_processing_consent: safeGet(row, 'data_processing_consent', false),
+              marketing_consent: safeGet(row, 'marketing_consent', false)
+            });
+          });
+        } catch (e) {
+          console.warn('Failed to fetch roi_calculations:', e);
+        }
       }
 
-      return query;
-    };
+      // Apply filters
+      let filteredLeads = allLeads;
 
-    // Determine which tables to include based on source filter
-    const includeDemo = source === 'all' || source === 'demo';
-    const includeContact = source === 'all' || source === 'contact';
-    const includeRoi = source === 'all' || source === 'roi';
+      // Date range filter
+      if (dateFrom) {
+        const fromDate = new Date(dateFrom).getTime();
+        filteredLeads = filteredLeads.filter(lead => new Date(lead.created_at).getTime() >= fromDate);
+      }
+      if (dateTo) {
+        const toDate = new Date(dateTo).getTime();
+        filteredLeads = filteredLeads.filter(lead => new Date(lead.created_at).getTime() <= toDate);
+      }
 
-    const queries = [
-      buildQuery('demo', includeDemo),
-      buildQuery('contact', includeContact),
-      buildQuery('roi', includeRoi)
-    ].filter(q => q !== '');
+      // Search filter
+      if (searchTerm && searchTerm.trim()) {
+        const term = searchTerm.toLowerCase();
+        filteredLeads = filteredLeads.filter(lead =>
+          (lead.name && lead.name.toLowerCase().includes(term)) ||
+          (lead.email && lead.email.toLowerCase().includes(term)) ||
+          (lead.company && lead.company.toLowerCase().includes(term))
+        );
+      }
 
-    if (queries.length === 0) {
+      // Sort
+      filteredLeads.sort((a, b) => {
+        const dateA = new Date(a.created_at).getTime();
+        const dateB = new Date(b.created_at).getTime();
+        return sortDir === 'asc' ? dateA - dateB : dateB - dateA;
+      });
+
+      // Pagination
+      const total = filteredLeads.length;
+      const paginatedLeads = filteredLeads.slice(offset, offset + pageSize);
+
+      return { items: paginatedLeads, total, page, pageSize };
+
+    } catch (error: any) {
+      console.error('Error fetching leads:', error);
+      // Return empty result instead of throwing
       return { items: [], total: 0, page, pageSize };
     }
-
-    const unionQuery = queries.join(' UNION ALL ');
-
-    // Get total count
-    const countResult = await sql`
-      SELECT COUNT(*) as total FROM (${sql.unsafe(unionQuery)}) as combined
-    `;
-    const total = Number(countResult[0]?.total || 0);
-
-    // Get paginated results
-    const sortOrder = sortDir === 'asc' ? 'ASC' : 'DESC';
-    const result = await sql`
-      SELECT * FROM (${sql.unsafe(unionQuery)}) as combined
-      ORDER BY created_at ${sql.unsafe(sortOrder)}
-      LIMIT ${pageSize}
-      OFFSET ${offset}
-    `;
-
-    const items: FullLeadData[] = result.map((r: any) => ({
-      id: r.id,
-      source: r.source,
-      name: r.name || 'Anonymous',
-      email: r.email || '',
-      phone: r.phone,
-      company: r.company,
-      hotel_size: r.hotel_size ? Number(r.hotel_size) : null,
-      message: r.message,
-      detail: r.detail?.substring(0, 100) || '',
-      integration_type: r.integration_type,
-      calculated_roi: r.calculated_roi ? Number(r.calculated_roi) : null,
-      responded_at: r.responded_at,
-      created_at: r.created_at,
-      is_new: isRecent(r.created_at),
-      position: r.position,
-      form_type: r.form_type,
-      current_revenue: r.current_revenue ? Number(r.current_revenue) : null,
-      monthly_savings: r.monthly_savings ? Number(r.monthly_savings) : null,
-      annual_revenue: r.annual_revenue ? Number(r.annual_revenue) : null,
-      data_processing_consent: r.data_processing_consent,
-      marketing_consent: r.marketing_consent
-    }));
-
-    return { items, total, page, pageSize };
   }, 'fetchAllLeads');
 };
 
 export const markLeadAsResponded = async (leadId: number): Promise<void> => {
   return safeApiCall(async () => {
-    await sql`
-      UPDATE contact_forms
-      SET responded_at = NOW()
-      WHERE id = ${leadId}
-    `;
+    try {
+      await sql`
+        UPDATE contact_forms
+        SET responded_at = NOW()
+        WHERE id = ${leadId}
+      `;
+    } catch (error) {
+      console.error('Error marking lead as responded:', error);
+      throw new Error('Failed to mark lead as responded');
+    }
   }, 'markLeadAsResponded');
 };
 
 export const deleteLead = async (leadId: number, source: 'demo' | 'contact' | 'roi'): Promise<void> => {
   return safeApiCall(async () => {
-    let tableName = '';
-    if (source === 'demo') tableName = 'demo_requests';
-    else if (source === 'contact') tableName = 'contact_forms';
-    else if (source === 'roi') tableName = 'roi_calculations';
-    else throw new Error('Invalid lead source');
+    try {
+      let tableName = '';
+      if (source === 'demo') tableName = 'demo_requests';
+      else if (source === 'contact') tableName = 'contact_forms';
+      else if (source === 'roi') tableName = 'roi_calculations';
+      else throw new Error('Invalid lead source');
 
-    await sql`DELETE FROM ${sql(tableName)} WHERE id = ${leadId}`;
+      await sql`DELETE FROM ${sql(tableName)} WHERE id = ${leadId}`;
+    } catch (error) {
+      console.error('Error deleting lead:', error);
+      throw new Error('Failed to delete lead');
+    }
   }, 'deleteLead');
 };
