@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { CONFIG, MOCK_INITIAL_POSTS, MOCK_DEMO_REQUESTS, MOCK_CONTACTS, MOCK_BLOG_POSTS_FULL, MOCK_ROI_CALCULATIONS, MOCK_COOKIE_CONSENTS } from './constants';
 import { ConnectionStatus, NavItem, Post, DashboardStats, DailyLeadCount, UnifiedLead, CookieConsentParams, CookieConsentResponse } from './types';
-import { TableName, CookieConsent, BlogPost } from './types/database';
+import { CookieConsent, BlogPost } from './types/database';
 import { testNeonConnection } from './services/neonService';
 import { testN8nConnection } from './services/n8nService';
 import { fetchDashboardStats, fetchLeadsByDay, fetchLatestLeads } from './services/statsService';
@@ -16,21 +15,14 @@ import { ChatHistory } from './components/ChatHistory';
 import { AuthorsManager } from './components/AuthorsManager';
 import { LeadsManager } from './components/LeadsManager';
 import {
-  Activity,
   LayoutDashboard,
   FileText,
-  Settings,
   CheckCircle2,
   AlertCircle,
-  Database,
-  Webhook,
-  Table2,
   Plus,
   Users,
-  MousePointer2,
   FileBarChart,
   Cookie,
-  ArrowUpRight,
   RefreshCw,
   ShieldCheck,
   ChevronLeft,
@@ -63,124 +55,7 @@ const SidebarItem: React.FC<{
   </button>
 );
 
-// Schema Viewer Component
-const SchemaViewer: React.FC = () => {
-  const [activeTable, setActiveTable] = useState<TableName>('demo_requests');
-
-  const tables: { name: TableName; label: string; description: string; mockData: any[] }[] = [
-    { name: 'demo_requests', label: 'Demo Requests', description: 'Inbound requests for product demos', mockData: MOCK_DEMO_REQUESTS },
-    { name: 'contact_forms', label: 'Contact Forms', description: 'General contact form entries', mockData: MOCK_CONTACTS },
-    { name: 'roi_calculations', label: 'ROI Calculations', description: 'Stored results from ROI calculator widget', mockData: MOCK_ROI_CALCULATIONS },
-    { name: 'cookie_consents', label: 'Cookie Consents', description: 'GDPR/Privacy consent logs', mockData: MOCK_COOKIE_CONSENTS },
-    { name: 'blog_posts', label: 'Blog Posts', description: 'Content management for the blog', mockData: MOCK_BLOG_POSTS_FULL },
-    { name: 'chat_logs', label: 'Chat Logs', description: 'Full history of AI-user interactions', mockData: [] },
-    { name: 'services', label: 'Services', description: 'Knowledge base for AI training', mockData: [] },
-    { name: 'authors', label: 'Authors', description: 'Blog content creators', mockData: [] },
-  ];
-
-  const currentTable = tables.find(t => t.name === activeTable)!;
-  const mockKeys = currentTable.mockData.length > 0 ? Object.keys(currentTable.mockData[0]) : ['id', 'created_at', '...'];
-
-  return (
-    <div className="flex h-[calc(100vh-140px)] gap-6">
-      {/* Table List */}
-      <div className="w-64 bg-white rounded-xl border border-gray-200 overflow-hidden flex-shrink-0">
-        <div className="p-4 bg-gray-50 border-b border-gray-200">
-          <h3 className="font-semibold text-sm text-gray-900">Database Tables</h3>
-        </div>
-        <div className="overflow-y-auto h-full">
-          {tables.map(table => (
-            <button
-              key={table.name}
-              onClick={() => setActiveTable(table.name)}
-              className={`w-full text-left px-4 py-3 text-sm border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors ${activeTable === table.name ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-600'
-                }`}
-            >
-              {table.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Table Details */}
-      <div className="flex-1 flex flex-col space-y-6">
-        {/* Definition Card */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div>
-              <h2 className="text-xl font-bold text-gray-900 font-mono">{currentTable.name}</h2>
-              <p className="text-gray-500 text-sm mt-1">{currentTable.label} — {currentTable.description}</p>
-            </div>
-            <div className="px-3 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-              Active in Neon
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Schema Definition (Type Preview)</h4>
-            <div className="bg-slate-900 text-slate-50 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-              <span className="text-pink-400">interface</span> <span className="text-yellow-400">{currentTable.name.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join('')}</span> {'{'}
-              <div className="pl-4 text-gray-400">
-                {mockKeys.map(key => (
-                  <div key={key}>
-                    <span className="text-blue-400">{key}</span>: <span className="text-emerald-400">
-                      {key.includes('id') ? 'number' :
-                        key.includes('date') || key.includes('at') ? 'string (ISO)' :
-                          key.includes('consent') ? 'boolean' :
-                            key === 'tags' || key === 'categories' ? 'JSONB' : 'string'}
-                    </span>;
-                  </div>
-                ))}
-              </div>
-              {'}'}
-            </div>
-          </div>
-        </div>
-
-        {/* Live Data Preview */}
-        <div className="bg-white rounded-xl border border-gray-200 shadow-sm flex-1 flex flex-col min-h-0">
-          <div className="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-            <h3 className="font-semibold text-sm text-gray-900 flex items-center gap-2">
-              <Database size={16} /> Live Data Preview (Limit 5)
-            </h3>
-            <span className="text-xs text-gray-500">Read-only connection</span>
-          </div>
-          <div className="overflow-auto flex-1 p-0">
-            {currentTable.mockData.length > 0 ? (
-              <table className="w-full text-left text-xs">
-                <thead className="bg-gray-100 text-gray-700 font-medium">
-                  <tr>
-                    {mockKeys.map(key => (
-                      <th key={key} className="px-4 py-2 border-b border-gray-200 whitespace-nowrap">{key}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {currentTable.mockData.map((row, idx) => (
-                    <tr key={idx} className="hover:bg-gray-50">
-                      {mockKeys.map(key => (
-                        <td key={key} className="px-4 py-2 whitespace-nowrap text-gray-600 font-mono">
-                          {typeof row[key] === 'object' ? JSON.stringify(row[key]) : String(row[key])}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            ) : (
-              <div className="flex flex-col items-center justify-center h-full text-gray-400 p-8">
-                <Table2 size={48} className="mb-2 opacity-20" />
-                <p>No data records found in simulation</p>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Compliance Viewer Component (Stage 5)
+// Compliance Viewer Component
 const ComplianceViewer: React.FC = () => {
   const [params, setParams] = useState<CookieConsentParams>({
     page: 1,
@@ -534,12 +409,6 @@ const App: React.FC = () => {
             label="Dashboard"
           />
           <SidebarItem
-            active={activeTab === NavItem.SCHEMA}
-            onClick={() => { setActiveTab(NavItem.SCHEMA); }}
-            icon={<Database size={20} />}
-            label="Architecture & DB"
-          />
-          <SidebarItem
             active={activeTab === NavItem.POSTS}
             onClick={() => { setActiveTab(NavItem.POSTS); setPostView('list'); }}
             icon={<FileText size={20} />}
@@ -562,10 +431,6 @@ const App: React.FC = () => {
             onClick={() => { setActiveTab(NavItem.COMPLIANCE); }}
             icon={<ShieldCheck size={20} />}
             label="Compliance Logs"
-          />
-          <SidebarItem
-            icon={<Settings size={20} />}
-            label="Configuration"
           />
           <div className="pt-4 mt-4 border-t border-gray-100">
             <h4 className="px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">AI Control</h4>
@@ -612,11 +477,9 @@ const App: React.FC = () => {
           <div className="flex flex-col">
             <h1 className="text-2xl font-bold text-gray-900">
               {activeTab === NavItem.DASHBOARD && 'Analytics Overview'}
-              {activeTab === NavItem.SCHEMA && 'Database Architecture'}
               {activeTab === NavItem.POSTS && (postView === 'list' ? 'Content Management' : postView === 'create' ? 'Create New Post' : 'Edit Post')}
               {activeTab === NavItem.LEADS && 'Leads Manager'}
               {activeTab === NavItem.COMPLIANCE && 'GDPR & Cookie Logs'}
-              {activeTab === NavItem.SETTINGS && 'Environment Variables'}
               {activeTab === NavItem.AI_TRAINING && 'AI Knowledge Base'}
               {activeTab === NavItem.CHAT_LOGS && 'AI Chat Monitoring'}
               {activeTab === NavItem.AUTHORS && 'Authors Directory'}
@@ -676,9 +539,6 @@ const App: React.FC = () => {
               </div>
             </div>
           )}
-
-          {/* SCHEMA VIEW */}
-          {activeTab === NavItem.SCHEMA && <SchemaViewer />}
 
           {/* AI VIEWS */}
           {activeTab === NavItem.AI_TRAINING && <ServicesManager />}
@@ -777,25 +637,6 @@ const App: React.FC = () => {
 
           {/* COMPLIANCE VIEW (NEW) */}
           {activeTab === NavItem.COMPLIANCE && <ComplianceViewer />}
-
-          {/* SETTINGS VIEW */}
-          {activeTab === NavItem.SETTINGS && (
-            <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <div className="prose max-w-none">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Environment Setup Instructions</h3>
-                <div className="bg-slate-900 text-slate-50 p-4 rounded-lg font-mono text-sm overflow-x-auto">
-                  <p className="text-gray-400 mb-2"># .env.local (Root Directory)</p>
-                  <p><span className="text-purple-400">DATABASE_URL</span>="{CONFIG.DATABASE_URL}"</p>
-                  <p><span className="text-purple-400">VITE_N8N_PUBLISH_WEBHOOK_URL</span>="{CONFIG.N8N_BLOG_OPS_URL}"</p>
-                  <p><span className="text-purple-400">VITE_N8N_GET_DATA_WEBHOOK_URL</span>="{CONFIG.N8N_BLOG_GET_URL}"</p>
-                  <p><span className="text-purple-400">VITE_N8N_WEBHOOK_SECRET</span>="{CONFIG.N8N_WEBHOOK_SECRET}"</p>
-                </div>
-                <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-sm">
-                  <strong>Important:</strong> Ensure these variables are added to your Vercel Project Settings under the "Environment Variables" tab for production deployment.
-                </div>
-              </div>
-            </div>
-          )}
 
         </div>
       </main>
