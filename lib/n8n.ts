@@ -174,19 +174,42 @@ export async function fetchBlogDataN8N(params?: {
   }, 'fetchBlogDataN8N');
 }
 
-// Helper to convert File to Base64 (for inline images only)
-export const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => {
-      const result = reader.result as string;
-      // Return full data URL for avatar_url field
-      resolve(result);
-    };
-    reader.onerror = error => reject(error);
-  });
-};
+/**
+ * Upload content image (inline image) using N8N
+ * Uses scenario: upload_content_image
+ */
+export async function uploadContentImage(imageFile: File): Promise<string> {
+  return safeApiCall(async () => {
+    if (!CONFIG.N8N_BLOG_OPS_URL) throw new Error("Missing N8N_BLOG_OPS_URL");
+
+    Logger.info("Uploading content image to N8N", { fileName: imageFile.name });
+
+    const formData = new FormData();
+    formData.append('scenario', 'upload_content_image');
+    formData.append('action', 'upload_content_image');
+    formData.append('data', imageFile, imageFile.name);
+
+    const response = await fetch(CONFIG.N8N_BLOG_OPS_URL, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Failed to upload content image: ${response.status} ${errorText.substring(0, 200)}`);
+    }
+
+    const result = await response.json();
+    const imageUrl = result.secure_url || result.url;
+
+    if (!imageUrl) {
+      throw new Error('No image URL returned from N8N');
+    }
+
+    Logger.info("Content image uploaded successfully", { url: imageUrl });
+    return imageUrl;
+  }, 'uploadContentImage');
+}
 
 /**
  * Send Author Operation with File Upload using FormData

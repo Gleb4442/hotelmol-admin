@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, X, Send, Loader2, Image as ImageIcon, Upload } from 'lucide-react';
-import { fileToBase64 } from '../lib/n8n';
+import { uploadContentImage } from '../lib/n8n';
 import { fetchAuthors } from '../services/authorsService';
 import { createBlogPost, updateBlogPost } from '../services/blogService';
 import { BlogPost, Author } from '../types/database';
@@ -188,11 +188,15 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
     onChange: (val: string) => void,
     placeholder: string
   }) => {
-    const handleInsert = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleInsert = async (e: React.ChangeEvent<HTMLInputElement>) => {
       if (e.target.files && e.target.files[0]) {
-        fileToBase64(e.target.files[0]).then(base64 => {
-          onChange(value + `\n![Image](${base64})\n`);
-        }).catch(console.error);
+        try {
+          const imageUrl = await uploadContentImage(e.target.files[0]);
+          onChange(value + `\n![Image](${imageUrl})\n`);
+        } catch (error) {
+          console.error('Failed to upload content image:', error);
+          setError('Failed to upload inline image');
+        }
       }
     };
 
