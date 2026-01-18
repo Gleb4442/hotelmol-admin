@@ -4,10 +4,11 @@ import { safeApiCall } from './api';
 
 /**
  * Blog Operations Payload - matches N8N spec
- * Supports: create, update, delete actions
+ * Uses upsert_post_existing_author for all blog post operations
+ * Note: For internal use only - will be converted to proper N8N scenario
  */
 export interface BlogOpsPayload {
-  action: 'create' | 'update' | 'delete';
+  action: 'create' | 'update' | 'delete'; // Internal action type, converted to N8N scenario
   post_id?: number;           // For update/delete
   title?: string;
   slug?: string;
@@ -51,7 +52,7 @@ export async function sendBlogOpsN8N(payload: BlogOpsPayload) {
 
     Logger.info("Initiating Blog Ops N8N Call", { url: CONFIG.N8N_BLOG_OPS_URL, action: payload.action });
 
-    // Add correct scenario for N8N workflow
+    // Always use upsert_post_existing_author scenario for blog posts
     const payloadWithScenario = {
       ...payload,
       scenario: 'upsert_post_existing_author',
@@ -285,7 +286,7 @@ export async function sendBlogOpsWithFile(payload: {
 
     Logger.info("Initiating Blog Ops with File Upload", { action: payload.action, title: payload.title });
 
-    // Step 1: Upload featured image if provided
+    // Step 1: Upload featured image if provided - uses 'upload_post_image' scenario
     let featured_image_url = null;
     if (payload.featuredImageFile) {
       const imageFormData = new FormData();
@@ -308,35 +309,39 @@ export async function sendBlogOpsWithFile(payload: {
       Logger.info("Image uploaded successfully", { url: featured_image_url });
     }
 
-    // Step 2: Create/Update post with upsert_post_existing_author scenario
-    const postFormData = new FormData();
-    postFormData.append('scenario', 'upsert_post_existing_author');
-    postFormData.append('action', 'upsert_post_existing_author');
-    postFormData.append('title', payload.title);
-    postFormData.append('slug', payload.slug);
-    postFormData.append('content', payload.content);
-    postFormData.append('author_id', payload.author_id.toString());
-    postFormData.append('status', payload.status);
+    // Step 2: Create/Update post - uses 'upsert_post_existing_author' scenario
+    const postPayload: any = {
+      scenario: 'upsert_post_existing_author',
+      action: 'upsert_post_existing_author',
+      title: payload.title,
+      slug: payload.slug,
+      content: payload.content,
+      author_id: payload.author_id,
+      status: payload.status
+    };
 
     if (payload.post_id) {
-      postFormData.append('post_id', payload.post_id.toString());
+      postPayload.post_id = payload.post_id;
     }
 
     if (payload.excerpt) {
-      postFormData.append('excerpt', payload.excerpt);
+      postPayload.excerpt = payload.excerpt;
     }
 
     if (payload.category) {
-      postFormData.append('category', payload.category);
+      postPayload.category = payload.category;
     }
 
     if (featured_image_url) {
-      postFormData.append('featured_image_url', featured_image_url);
+      postPayload.featured_image_url = featured_image_url;
     }
 
     const response = await fetch(CONFIG.N8N_BLOG_OPS_URL, {
       method: 'POST',
-      body: postFormData,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(postPayload),
     });
 
     if (!response.ok) {
