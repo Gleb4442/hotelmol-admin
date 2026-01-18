@@ -43,6 +43,7 @@ export interface DeleteItemPayload {
 /**
  * Send data to N8N Blog Write Operations Webhook
  * Endpoint: /webhook/blog-write-ops
+ * Uses scenario: upsert_post_existing_author
  */
 export async function sendBlogOpsN8N(payload: BlogOpsPayload) {
   return safeApiCall(async () => {
@@ -50,13 +51,20 @@ export async function sendBlogOpsN8N(payload: BlogOpsPayload) {
 
     Logger.info("Initiating Blog Ops N8N Call", { url: CONFIG.N8N_BLOG_OPS_URL, action: payload.action });
 
+    // Add correct scenario for N8N workflow
+    const payloadWithScenario = {
+      ...payload,
+      scenario: 'upsert_post_existing_author',
+      action: 'upsert_post_existing_author'
+    };
+
     const response = await fetch(CONFIG.N8N_BLOG_OPS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         // N8N webhooks don't require Authorization by default
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payloadWithScenario),
     });
 
     if (!response.ok) {
@@ -235,6 +243,7 @@ export async function sendAuthorOpsWithFile(payload: {
 /**
  * Send Blog Post Operation with File Upload using FormData
  * N8N requires multipart/form-data with binary file named 'data'
+ * Uses correct N8N workflow scenarios: upload_post_image, upsert_post_existing_author
  */
 export async function sendBlogOpsWithFile(payload: {
   action: 'create' | 'update';
@@ -253,37 +262,58 @@ export async function sendBlogOpsWithFile(payload: {
 
     Logger.info("Initiating Blog Ops with File Upload", { action: payload.action, title: payload.title });
 
-    // Create FormData
-    const formData = new FormData();
-    formData.append('action', payload.action);
-    formData.append('scenario', payload.action); // Add scenario field
-    formData.append('title', payload.title);
-    formData.append('slug', payload.slug);
-    formData.append('content', payload.content);
-    formData.append('author_id', payload.author_id.toString());
-    formData.append('status', payload.status);
+    // Step 1: Upload featured image if provided
+    let featured_image_url = null;
+    if (payload.featuredImageFile) {
+      const imageFormData = new FormData();
+      imageFormData.append('scenario', 'upload_post_image');
+      imageFormData.append('action', 'upload_post_image');
+      imageFormData.append('data', payload.featuredImageFile, payload.featuredImageFile.name);
+
+      const imageResponse = await fetch(CONFIG.N8N_BLOG_OPS_URL, {
+        method: 'POST',
+        body: imageFormData,
+      });
+
+      if (!imageResponse.ok) {
+        const errorText = await imageResponse.text();
+        throw new Error(`Failed to upload image: ${imageResponse.status} ${errorText.substring(0, 200)}`);
+      }
+
+      const imageResult = await imageResponse.json();
+      featured_image_url = imageResult.secure_url || imageResult.url;
+      Logger.info("Image uploaded successfully", { url: featured_image_url });
+    }
+
+    // Step 2: Create/Update post with upsert_post_existing_author scenario
+    const postFormData = new FormData();
+    postFormData.append('scenario', 'upsert_post_existing_author');
+    postFormData.append('action', 'upsert_post_existing_author');
+    postFormData.append('title', payload.title);
+    postFormData.append('slug', payload.slug);
+    postFormData.append('content', payload.content);
+    postFormData.append('author_id', payload.author_id.toString());
+    postFormData.append('status', payload.status);
 
     if (payload.post_id) {
-      formData.append('post_id', payload.post_id.toString());
+      postFormData.append('post_id', payload.post_id.toString());
     }
 
     if (payload.excerpt) {
-      formData.append('excerpt', payload.excerpt);
+      postFormData.append('excerpt', payload.excerpt);
     }
 
     if (payload.category) {
-      formData.append('category', payload.category);
+      postFormData.append('category', payload.category);
     }
 
-    // ВАЖНО: имя поля ОБЯЗАТЕЛЬНО должно быть 'data'
-    if (payload.featuredImageFile) {
-      formData.append('data', payload.featuredImageFile, payload.featuredImageFile.name);
+    if (featured_image_url) {
+      postFormData.append('featured_image_url', featured_image_url);
     }
 
     const response = await fetch(CONFIG.N8N_BLOG_OPS_URL, {
       method: 'POST',
-      // НЕ УСТАНАВЛИВАЕМ Content-Type! Браузер сам установит с boundary
-      body: formData,
+      body: postFormData,
     });
 
     if (!response.ok) {
