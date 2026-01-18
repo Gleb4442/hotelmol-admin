@@ -53,10 +53,18 @@ export async function sendBlogOpsN8N(payload: BlogOpsPayload) {
     Logger.info("Initiating Blog Ops N8N Call", { url: CONFIG.N8N_BLOG_OPS_URL, action: payload.action });
 
     // Always use upsert_post_existing_author scenario for blog posts
-    const payloadWithScenario = {
-      ...payload,
+    // Build payload explicitly to ensure correct action/scenario values
+    const n8nPayload = {
       scenario: 'upsert_post_existing_author',
-      action: 'upsert_post_existing_author'
+      action: 'upsert_post_existing_author',
+      post_id: payload.post_id,
+      title: payload.title,
+      slug: payload.slug,
+      content: payload.content,
+      excerpt: payload.excerpt,
+      featured_image_url: payload.featured_image_url,
+      author_id: payload.author_id,
+      status: payload.status
     };
 
     const response = await fetch(CONFIG.N8N_BLOG_OPS_URL, {
@@ -65,7 +73,7 @@ export async function sendBlogOpsN8N(payload: BlogOpsPayload) {
         'Content-Type': 'application/json',
         // N8N webhooks don't require Authorization by default
       },
-      body: JSON.stringify(payloadWithScenario),
+      body: JSON.stringify(n8nPayload),
     });
 
     if (!response.ok) {

@@ -143,9 +143,11 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
     if (e.target.files && e.target.files[0]) {
       try {
         const file = e.target.files[0];
-        // Compress image to reduce payload size (max 800px width, 70% quality)
+        // Save File object for upload
+        setCoverImageFile(file);
+        // Compress image for preview only (max 800px width, 70% quality)
         const compressedBase64 = await compressImage(file, 800, 0.7);
-        setFormData(prev => ({ ...prev, featured_image: compressedBase64 }));
+        setCoverImagePreview(compressedBase64);
       } catch (err) {
         console.error("Image upload failed", err);
         setError("Failed to process image");
@@ -236,8 +238,10 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
         author_id: formData.author_id || 1,
         status: formData.status as 'draft' | 'published' | 'archived',
         category: formData.category,
-        // Keep existing featured_image if no new file
-        featured_image_url: formData.featured_image || null,
+        // Only pass featured_image_url if it's an existing URL (not base64) and no new file
+        featured_image_url: (!coverImageFile && formData.featured_image && !formData.featured_image.startsWith('data:'))
+          ? formData.featured_image
+          : null,
       };
 
       // Call the appropriate service method with File object
@@ -610,10 +614,10 @@ export const BlogPostForm: React.FC<BlogPostFormProps> = ({ initialData, onCance
           <div className="p-4 border border-gray-200 rounded-lg" >
             <h4 className="text-sm font-medium text-gray-900 mb-3">Featured Image</h4>
             <div className="space-y-3">
-              {formData.featured_image ? (
+              {coverImagePreview ? (
                 <div className="relative group rounded-lg overflow-hidden border border-gray-200 aspect-video bg-gray-100">
                   <img
-                    src={formData.featured_image}
+                    src={coverImagePreview}
                     alt="Featured"
                     className="w-full h-full object-cover"
                   />
