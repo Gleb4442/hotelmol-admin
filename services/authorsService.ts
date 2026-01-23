@@ -34,56 +34,84 @@ export interface AuthorInput {
  * Create a new author with optional file upload
  */
 export const createAuthor = async (input: AuthorInput): Promise<any> => {
-    // If there's a file, use FormData endpoint
-    if (input.avatarFile) {
-        return sendAuthorOpsWithFile({
+    return safeApiCall(async () => {
+        // If there's a file, use FormData endpoint
+        if (input.avatarFile) {
+            const result = await sendAuthorOpsWithFile({
+                action: 'create_author',
+                name: input.name,
+                email: input.email,
+                bio: input.bio || null,
+                avatarFile: input.avatarFile
+            });
+
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to create author via N8N');
+            }
+
+            return result.author || result.data || input;
+        }
+
+        // Otherwise use JSON endpoint (no image)
+        const payload: AuthorOpsPayload = {
             action: 'create_author',
             name: input.name,
             email: input.email,
             bio: input.bio || null,
-            avatarFile: input.avatarFile
-        });
-    }
+            avatar_url: input.avatar_url || null
+        };
 
-    // Otherwise use JSON endpoint (no image)
-    const payload: AuthorOpsPayload = {
-        action: 'create_author',
-        name: input.name,
-        email: input.email,
-        bio: input.bio || null,
-        avatar_url: input.avatar_url || null
-    };
+        const result = await sendAuthorOpsN8N(payload);
 
-    return sendAuthorOpsN8N(payload);
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to create author via N8N');
+        }
+
+        return result.author || result.data || input;
+    }, 'createAuthor');
 };
 
 /**
  * Update an existing author with optional file upload
  */
 export const updateAuthor = async (id: number, input: AuthorInput): Promise<any> => {
-    // If there's a file, use FormData endpoint
-    if (input.avatarFile) {
-        return sendAuthorOpsWithFile({
+    return safeApiCall(async () => {
+        // If there's a file, use FormData endpoint
+        if (input.avatarFile) {
+            const result = await sendAuthorOpsWithFile({
+                action: 'update_author',
+                author_id: id,
+                name: input.name,
+                email: input.email,
+                bio: input.bio || null,
+                avatarFile: input.avatarFile
+            });
+
+            if (!result.success) {
+                throw new Error(result.error || 'Failed to update author via N8N');
+            }
+
+            return result.author || result.data || { ...input, id };
+        }
+
+        // Otherwise use JSON endpoint (no image change)
+        const payload: AuthorOpsPayload = {
             action: 'update_author',
             author_id: id,
             name: input.name,
             email: input.email,
             bio: input.bio || null,
-            avatarFile: input.avatarFile
-        });
-    }
+            avatar_url: input.avatar_url || null
+        };
 
-    // Otherwise use JSON endpoint (no image change)
-    const payload: AuthorOpsPayload = {
-        action: 'update_author',
-        author_id: id,
-        name: input.name,
-        email: input.email,
-        bio: input.bio || null,
-        avatar_url: input.avatar_url || null
-    };
+        const result = await sendAuthorOpsN8N(payload);
 
-    return sendAuthorOpsN8N(payload);
+        if (!result.success) {
+            throw new Error(result.error || 'Failed to update author via N8N');
+        }
+
+        return result.author || result.data || { ...input, id };
+    }, `updateAuthor:${id}`);
 };
 
 /**

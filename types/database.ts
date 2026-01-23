@@ -72,13 +72,31 @@ export interface BlogPost {
   slug: string;
   content: string;
   excerpt?: string;           // Added per spec
+  featured_image?: string | null;  // Alias for featured_image_url
   featured_image_url?: string | null;  // Renamed per spec
   category?: string;          // Blog category/tag
+  tags?: string[];            // Tags array
   author_id: number;
   author?: Author;            // For JOIN
   status: 'draft' | 'published' | 'archived';
   views_count?: number;       // Added per spec
   likes_count?: number;       // Added per spec
+  // Translations
+  title_ru?: string;
+  content_ru?: string;
+  title_en?: string;
+  content_en?: string;
+  title_pl?: string;
+  content_pl?: string;
+  // SEO metadata
+  seo_title?: string;
+  seo_description?: string;
+  seo_title_ru?: string;
+  seo_description_ru?: string;
+  seo_title_en?: string;
+  seo_description_en?: string;
+  seo_title_pl?: string;
+  seo_description_pl?: string;
   created_at: string;
   updated_at: string;
 }

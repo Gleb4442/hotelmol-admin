@@ -78,10 +78,17 @@ export async function sendBlogOpsN8N(payload: BlogOpsPayload) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`N8N Gateway Error: ${response.status} ${errorText.substring(0, 200)}`);
+      Logger.error(`N8N Blog Ops Error: ${response.status}`, {
+        status: response.status,
+        statusText: response.statusText,
+        errorText: errorText.substring(0, 500)
+      });
+      throw new Error(`Failed to save blog post: ${response.status} - ${errorText.substring(0, 200)}`);
     }
 
-    return await response.json();
+    const result = await response.json();
+    Logger.info("Blog Ops N8N Response", { success: result.success });
+    return result;
   }, 'sendBlogOpsN8N');
 }
 
@@ -95,20 +102,33 @@ export async function sendAuthorOpsN8N(payload: AuthorOpsPayload) {
 
     Logger.info("Initiating Author Ops N8N Call", { url: CONFIG.N8N_BLOG_OPS_URL, action: payload.action });
 
+    // Ensure scenario field is set for N8N routing
+    const n8nPayload = {
+      ...payload,
+      scenario: payload.action
+    };
+
     const response = await fetch(CONFIG.N8N_BLOG_OPS_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(n8nPayload),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`N8N Author Error: ${response.status} ${errorText.substring(0, 200)}`);
+      Logger.error(`N8N Author Ops Error: ${response.status}`, {
+        status: response.status,
+        statusText: response.statusText,
+        errorText: errorText.substring(0, 500)
+      });
+      throw new Error(`Failed to save author: ${response.status} - ${errorText.substring(0, 200)}`);
     }
 
-    return await response.json();
+    const result = await response.json();
+    Logger.info("Author Ops N8N Response", { success: result.success });
+    return result;
   }, 'sendAuthorOpsN8N');
 }
 
@@ -132,10 +152,17 @@ export async function sendDeleteItemN8N(payload: DeleteItemPayload) {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`N8N Delete Error: ${response.status} ${errorText.substring(0, 200)}`);
+      Logger.error(`N8N Delete Error: ${response.status}`, {
+        status: response.status,
+        statusText: response.statusText,
+        errorText: errorText.substring(0, 500)
+      });
+      throw new Error(`Failed to delete ${payload.type}: ${response.status} - ${errorText.substring(0, 200)}`);
     }
 
-    return await response.json();
+    const result = await response.json();
+    Logger.info("Delete N8N Response", { success: result.success });
+    return result;
   }, 'sendDeleteItemN8N');
 }
 
@@ -205,13 +232,19 @@ export async function uploadContentImage(imageFile: File): Promise<string> {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Failed to upload content image: ${response.status} ${errorText.substring(0, 200)}`);
+      Logger.error(`N8N Content Image Upload Error: ${response.status}`, {
+        status: response.status,
+        statusText: response.statusText,
+        errorText: errorText.substring(0, 500)
+      });
+      throw new Error(`Failed to upload content image: ${response.status} - ${errorText.substring(0, 200)}`);
     }
 
     const result = await response.json();
     const imageUrl = result.secure_url || result.url;
 
     if (!imageUrl) {
+      Logger.error("No image URL in N8N response", { result });
       throw new Error('No image URL returned from N8N');
     }
 
@@ -265,10 +298,17 @@ export async function sendAuthorOpsWithFile(payload: {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`N8N Author Error: ${response.status} ${errorText.substring(0, 200)}`);
+      Logger.error(`N8N Author Ops with File Error: ${response.status}`, {
+        status: response.status,
+        statusText: response.statusText,
+        errorText: errorText.substring(0, 500)
+      });
+      throw new Error(`Failed to save author with avatar: ${response.status} - ${errorText.substring(0, 200)}`);
     }
 
-    return await response.json();
+    const result = await response.json();
+    Logger.info("Author Ops with File completed successfully");
+    return result;
   }, 'sendAuthorOpsWithFile');
 }
 
@@ -309,12 +349,23 @@ export async function sendBlogOpsWithFile(payload: {
 
       if (!imageResponse.ok) {
         const errorText = await imageResponse.text();
-        throw new Error(`Failed to upload image: ${imageResponse.status} ${errorText.substring(0, 200)}`);
+        Logger.error(`N8N Featured Image Upload Error: ${imageResponse.status}`, {
+          status: imageResponse.status,
+          statusText: imageResponse.statusText,
+          errorText: errorText.substring(0, 500)
+        });
+        throw new Error(`Failed to upload featured image: ${imageResponse.status} - ${errorText.substring(0, 200)}`);
       }
 
       const imageResult = await imageResponse.json();
       featured_image_url = imageResult.secure_url || imageResult.url;
-      Logger.info("Image uploaded successfully", { url: featured_image_url });
+
+      if (!featured_image_url) {
+        Logger.error("No featured image URL in N8N response", { imageResult });
+        throw new Error('No image URL returned from N8N for featured image');
+      }
+
+      Logger.info("Featured image uploaded successfully", { url: featured_image_url });
     }
 
     // Step 2: Create/Update post - uses 'upsert_post_existing_author' scenario
@@ -354,9 +405,16 @@ export async function sendBlogOpsWithFile(payload: {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`N8N Blog Error: ${response.status} ${errorText.substring(0, 200)}`);
+      Logger.error(`N8N Blog Ops with File Error: ${response.status}`, {
+        status: response.status,
+        statusText: response.statusText,
+        errorText: errorText.substring(0, 500)
+      });
+      throw new Error(`Failed to save blog post with image: ${response.status} - ${errorText.substring(0, 200)}`);
     }
 
-    return await response.json();
+    const result = await response.json();
+    Logger.info("Blog Ops with File completed successfully", { hasImage: !!featured_image_url });
+    return result;
   }, 'sendBlogOpsWithFile');
 }
